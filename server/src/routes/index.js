@@ -1,6 +1,13 @@
 import { Router } from "express";
 import { asyncHandler as a } from "../middleware/asyncHandler.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { validateBody } from "../middleware/validate.js";
+import {
+  loginLimiter,
+  refreshLimiter,
+  seedLimiter,
+  publicLimiter,
+} from "../middleware/rateLimit.js";
 
 import { listMartyrs, getMartyr } from "../controllers/martyrs.controller.js";
 import {
@@ -28,9 +35,23 @@ import {
   deleteWar,
 } from "../controllers/admin.controller.js";
 
+import {
+  martyrCreateSchema,
+  martyrUpdateSchema,
+  memorialCreateSchema,
+  memorialUpdateSchema,
+  warCreateSchema,
+  warUpdateSchema,
+  loginSchema,
+  refreshSchema,
+  seedAdminSchema,
+} from "../schemas/index.js";
+
 export const api = Router();
 
 // --- PUBLIC ROUTES ---
+api.use(publicLimiter);
+
 api.get("/martyrs", a(listMartyrs));
 api.get("/martyrs/:slug", a(getMartyr));
 
@@ -47,28 +68,28 @@ api.get("/filters", a(getFilters));
 api.get("/stats", a(getStats));
 
 // --- AUTH ROUTES ---
-api.post("/auth/login", a(login));
-api.post("/auth/refresh", a(refresh));
-api.post("/auth/seed-admin", a(seedAdmin));
+api.post("/auth/login", loginLimiter, validateBody(loginSchema), a(login));
+api.post("/auth/refresh", refreshLimiter, validateBody(refreshSchema), a(refresh));
+api.post("/auth/seed-admin", seedLimiter, validateBody(seedAdminSchema), a(seedAdmin));
 api.get("/auth/me", a(requireAuth), a(getMe));
 
-// --- ADMIN ROUTES (Protected by requireAuth & requireAdmin) ---
+// --- ADMIN ROUTES (requireAuth + requireAdmin) ---
 const admin = Router();
 admin.use(a(requireAuth), requireAdmin);
 
 admin.get("/martyrs", a(listMartyrsAdmin));
-admin.post("/martyrs", a(createMartyr));
-admin.put("/martyrs/:id", a(updateMartyr));
+admin.post("/martyrs", validateBody(martyrCreateSchema), a(createMartyr));
+admin.put("/martyrs/:id", validateBody(martyrUpdateSchema), a(updateMartyr));
 admin.delete("/martyrs/:id", a(deleteMartyr));
 
 admin.get("/memorials", a(listMemorialsAdmin));
-admin.post("/memorials", a(createMemorial));
-admin.put("/memorials/:id", a(updateMemorial));
+admin.post("/memorials", validateBody(memorialCreateSchema), a(createMemorial));
+admin.put("/memorials/:id", validateBody(memorialUpdateSchema), a(updateMemorial));
 admin.delete("/memorials/:id", a(deleteMemorial));
 
 admin.get("/wars", a(listWarsAdmin));
-admin.post("/wars", a(createWar));
-admin.put("/wars/:id", a(updateWar));
+admin.post("/wars", validateBody(warCreateSchema), a(createWar));
+admin.put("/wars/:id", validateBody(warUpdateSchema), a(updateWar));
 admin.delete("/wars/:id", a(deleteWar));
 
 api.use("/admin", admin);
