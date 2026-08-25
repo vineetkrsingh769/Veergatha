@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Search, Menu, X } from "lucide-react";
+import { Link, NavLink, Outlet } from "react-router-dom";
+import { Search } from "lucide-react";
 
 const NAV_ITEMS = [
   { to: "/", label: "Home", end: true },
@@ -24,22 +23,19 @@ const navLinkClass = ({ isActive }) =>
   ].join(" ");
 
 export default function Layout() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const { pathname } = useLocation();
-
-  // Close the panel on navigation, or it stays open over the new page.
-  useEffect(() => setMenuOpen(false), [pathname]);
-
   return (
     <div className="flex min-h-screen flex-col bg-[#FAF7F2] font-sans text-[#1A241A]">
       <header className="sticky top-0 z-50 border-b border-stone-300/70 bg-[#FAF7F2]/90 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/*
+          Locked to a static desktop layout: no breakpoint variants and no
+          disclosure panel. min-w keeps the bar desktop-shaped, so a narrow
+          viewport scrolls the page sideways instead of reflowing.
+        */}
+        <div className="mx-auto min-w-[1080px] max-w-7xl px-8">
           {/*
-            Three columns of 1fr / auto / 1fr. The outer columns are forced to
-            equal width, so the nav in the middle is centred against the page
-            rather than against whatever space the brand happens to leave.
-            justify-between could never do this, because the brand block is far
-            wider than the actions block.
+            1fr / auto / 1fr. The outer columns are forced equal, so the nav
+            centres against the page rather than against whatever space the
+            brand leaves over.
           */}
           <div className="grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-4">
             {/* Brand */}
@@ -53,10 +49,10 @@ export default function Layout() {
                   className="h-9 w-9 shrink-0 transition-transform group-hover:scale-105"
                 />
                 <span className="min-w-0 leading-none">
-                  <span className="block truncate font-display text-lg font-bold tracking-tight text-[#1A241A] sm:text-xl">
+                  <span className="block truncate font-display text-xl font-bold tracking-tight text-[#1A241A]">
                     Veergatha
                   </span>
-                  <span className="mt-0.5 hidden truncate text-[10px] font-semibold uppercase tracking-[0.15em] text-[#D96B27] sm:block">
+                  <span className="mt-0.5 block truncate text-[10px] font-semibold uppercase tracking-[0.15em] text-[#D96B27]">
                     Archive of Remembrance
                   </span>
                 </span>
@@ -64,7 +60,7 @@ export default function Layout() {
             </div>
 
             {/* Centre nav */}
-            <nav className="hidden items-center gap-1 lg:flex">
+            <nav className="flex items-center gap-1">
               {NAV_ITEMS.map(({ to, label, end }) => (
                 <NavLink key={to} to={to} end={end} className={navLinkClass}>
                   {label}
@@ -74,107 +70,30 @@ export default function Layout() {
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-2">
-              {/*
-                Icon-only until xl. At exactly lg the brand, four nav items and
-                three actions add up to slightly more than the available width,
-                and dropping the label is what buys the room back.
-              */}
               <Link
                 to="/search"
-                aria-label="Search the archive"
-                className="hidden items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-stone-700 transition-colors hover:text-[#C25016] sm:flex"
+                className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-stone-700 transition-colors hover:text-[#C25016]"
               >
                 <Search className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
-                <span className="hidden xl:inline">Search</span>
+                Search
               </Link>
 
               <Link
                 to="/martyrs"
-                className="hidden rounded-full bg-[#1E431B] px-4 py-2 text-sm font-semibold text-[#FAF7F2] transition-colors hover:bg-[#163319] md:inline-flex"
+                className="inline-flex rounded-full bg-[#1E431B] px-4 py-2 text-sm font-semibold text-[#FAF7F2] transition-colors hover:bg-[#163319]"
               >
                 Browse Archive
               </Link>
 
               <Link
                 to="/admin/dashboard"
-                className="hidden rounded-full border border-stone-400 px-4 py-2 text-sm font-semibold text-[#1E431B] transition-colors hover:border-[#D96B27] hover:text-[#C25016] md:inline-flex"
+                className="inline-flex rounded-full border border-stone-400 px-4 py-2 text-sm font-semibold text-[#1E431B] transition-colors hover:border-[#D96B27] hover:text-[#C25016]"
               >
                 Staff Login
               </Link>
-
-              <button
-                type="button"
-                onClick={() => setMenuOpen((open) => !open)}
-                aria-expanded={menuOpen}
-                aria-controls="mobile-nav"
-                aria-label={menuOpen ? "Close menu" : "Open menu"}
-                className="rounded-md p-2 text-stone-700 transition-colors hover:bg-stone-200/60 hover:text-[#C25016] lg:hidden"
-              >
-                {menuOpen ? (
-                  <X className="h-5 w-5" aria-hidden="true" />
-                ) : (
-                  <Menu className="h-5 w-5" aria-hidden="true" />
-                )}
-              </button>
             </div>
           </div>
         </div>
-
-        {/* Mobile / tablet panel — below lg there was previously no nav at all. */}
-        {menuOpen && (
-          <nav
-            id="mobile-nav"
-            className="border-t border-stone-300/70 bg-[#FAF7F2] lg:hidden"
-          >
-            <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3 sm:px-6">
-              {NAV_ITEMS.map(({ to, label, end }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={end}
-                  className={({ isActive }) =>
-                    `rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-[#D96B27]/10 text-[#C25016]"
-                        : "text-stone-700 hover:bg-stone-200/60"
-                    }`
-                  }
-                >
-                  {label}
-                </NavLink>
-              ))}
-
-              <NavLink
-                to="/search"
-                className={({ isActive }) =>
-                  `flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-[#D96B27]/10 text-[#C25016]"
-                      : "text-stone-700 hover:bg-stone-200/60"
-                  }`
-                }
-              >
-                <Search className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
-                Search
-              </NavLink>
-
-              <div className="mt-2 flex flex-col gap-2 border-t border-stone-300/70 pt-3">
-                <Link
-                  to="/martyrs"
-                  className="rounded-full bg-[#1E431B] px-4 py-2.5 text-center text-sm font-semibold text-[#FAF7F2] transition-colors hover:bg-[#163319]"
-                >
-                  Browse Archive
-                </Link>
-                <Link
-                  to="/admin/dashboard"
-                  className="rounded-full border border-stone-400 px-4 py-2.5 text-center text-sm font-semibold text-[#1E431B] transition-colors hover:border-[#D96B27] hover:text-[#C25016]"
-                >
-                  Staff Login
-                </Link>
-              </div>
-            </div>
-          </nav>
-        )}
       </header>
 
       {/* Main Content */}
