@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { Search, Shield, LogIn } from "lucide-react";
+import { Search, LogIn } from "lucide-react";
 
 export default function Layout() {
   const navLinkClass = ({ isActive }) =>
@@ -14,9 +14,13 @@ export default function Layout() {
 
           {/* Brand */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-full bg-[#1E431B] flex items-center justify-center text-[#D96B27] group-hover:bg-[#163319] transition-colors">
-              <Shield className="w-4.5 h-4.5" strokeWidth={1.75} />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Veergatha emblem"
+              width={36}
+              height={36}
+              className="h-9 w-9 shrink-0 transition-transform group-hover:scale-105"
+            />
             <div className="leading-none">
               <span className="font-display text-xl font-bold text-[#1A241A] tracking-tight block">
                 Veergatha
