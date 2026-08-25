@@ -1,233 +1,220 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import {
+  Award,
+  Landmark,
+  ExternalLink,
+  Calendar,
+  MapPin,
+  CheckCircle2,
+  Swords,
+} from "lucide-react";
+
 import { fetchMartyrBySlug } from "../lib/api";
-import { Shield, Award, Landmark, ExternalLink, Calendar, MapPin, CheckCircle2, ArrowLeft } from "lucide-react";
+import { useApi } from "../hooks/useApi";
+import {
+  birthplaceOf,
+  displayName,
+  formatDate,
+  isPosthumous,
+  memorialLocation,
+  recordId,
+} from "../lib/format";
+import {
+  BackLink,
+  DetailPanel,
+  Loading,
+  MetaGrid,
+  MetaItem,
+  NotFound,
+  PageContainer,
+  PersonGrid,
+  PersonLink,
+  Pill,
+  Section,
+  StatusBadge,
+} from "../components/ui";
 
 export default function MartyrDetail() {
   const { slug } = useParams();
-  const [martyr, setMartyr] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data, loading, error } = useApi(() => fetchMartyrBySlug(slug), [slug]);
+  const martyr = data?.martyr;
 
-  useEffect(() => {
-    setLoading(true);
-    setError("");
-    fetchMartyrBySlug(slug)
-      .then((data) => setMartyr(data.martyr))
-      .catch((err) => setError(err.message || "Record not found"))
-      .finally(() => setLoading(false));
-  }, [slug]);
-
-  if (loading) {
-    return <div className="py-24 text-center text-zinc-500 text-sm">Loading recipient profile...</div>;
-  }
+  if (loading) return <Loading label="Loading recipient profile…" />;
 
   if (error || !martyr) {
     return (
-      <div className="py-16 px-4 max-w-xl mx-auto text-center space-y-4">
-        <p className="text-red-400 text-sm">{error || "Record not found."}</p>
-        <Link to="/martyrs" className="inline-block text-xs text-amber-500 underline">
-          ← Return to Recipients Directory
-        </Link>
-      </div>
+      <NotFound
+        message={error || "Record not found."}
+        backTo="/martyrs"
+        backLabel="Return to Recipients Directory"
+      />
     );
   }
 
+  const awards = martyr.awards ?? [];
+  const memorials = martyr.memorials ?? [];
+  const sources = martyr.sources ?? [];
+
+  // Never invent a conflict. An unlinked record shows an em dash, not a guess.
+  const conflict = martyr.war?.name || martyr.operation || "—";
+
   return (
-    <div className="py-8 px-8 max-w-5xl mx-auto space-y-8">
-      {/* Back Button */}
-      <div>
-        <Link to="/martyrs" className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-amber-500 transition-colors">
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Recipients</span>
-        </Link>
-      </div>
+    <PageContainer width="medium" className="space-y-6 sm:space-y-8">
+      <BackLink to="/martyrs">Back to Recipients</BackLink>
 
-      {/* Profile Header Card */}
-      <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-8 space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-amber-950/60 border border-amber-700/40 text-amber-400">
-                {martyr.serviceBranch}
-              </span>
-              <span
-                className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${
-                  martyr.status === "fell-in-action"
-                    ? "bg-red-950/60 border border-red-800/40 text-red-400"
-                    : "bg-emerald-950/60 border border-emerald-800/40 text-emerald-400"
-                }`}
-              >
-                {martyr.status === "fell-in-action" ? "Fell in Action" : "Survived"}
-              </span>
-            </div>
+      <DetailPanel
+        pill={<Pill>{martyr.serviceBranch}</Pill>}
+        aside={<StatusBadge status={martyr.status} />}
+        title={displayName(martyr)}
+        lede={
+          martyr.regiment
+            ? `${martyr.regiment}${martyr.unit ? ` (${martyr.unit})` : ""}`
+            : martyr.unit
+        }
+      >
+        {martyr.serviceNumber && (
+          <p className="font-mono text-xs text-stone-600">
+            Service No: <span className="font-semibold text-stone-800">{martyr.serviceNumber}</span>
+          </p>
+        )}
 
-            <h1 className="font-display text-5xl font-bold text-zinc-100">
-              {martyr.rank} {martyr.fullName}
-            </h1>
+        <MetaGrid>
+          <MetaItem icon={MapPin} label="Hometown" value={birthplaceOf(martyr)} />
+          <MetaItem
+            icon={Calendar}
+            label={isPosthumous(martyr) ? "Date of action / sacrifice" : "Date of action"}
+            value={formatDate(martyr.dateOfMartyrdom, "Recorded in action")}
+          />
+          <MetaItem icon={Swords} label="Conflict" value={conflict} />
+        </MetaGrid>
+      </DetailPanel>
 
-            <p className="text-sm text-amber-500 font-medium">
-              {martyr.regiment} {martyr.unit ? `(${martyr.unit})` : ""}
-            </p>
-          </div>
-
-          {martyr.serviceNumber && (
-            <div className="bg-zinc-950 border border-zinc-800 px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-400">
-              Service No: <span className="text-zinc-200">{martyr.serviceNumber}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Fact grid */}
-        <div className="grid grid-cols-3 gap-4 pt-4 border-t border-zinc-800/60 text-xs">
-          <div className="flex items-center gap-2 text-zinc-300">
-            <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
-            <div>
-              <span className="text-zinc-500 block text-[10px] uppercase">Hometown</span>
-              <span>
-                {[martyr.placeOfBirth?.village, martyr.placeOfBirth?.district, martyr.placeOfBirth?.state]
-                  .filter(Boolean)
-                  .join(", ") || "India"}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 text-zinc-300">
-            <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
-            <div>
-              <span className="text-zinc-500 block text-[10px] uppercase">
-                {martyr.status === "fell-in-action" ? "Date of Action / Sacrifice" : "Date of Action"}
-              </span>
-              <span>
-                {martyr.dateOfMartyrdom
-                  ? new Date(martyr.dateOfMartyrdom).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })
-                  : "Recorded in Action"}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 text-zinc-300">
-            <Shield className="w-4 h-4 text-amber-500 shrink-0" />
-            <div>
-              <span className="text-zinc-500 block text-[10px] uppercase">Conflict</span>
-              <span>{martyr.war?.name || martyr.operation || "Operation Vijay"}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Verbatim Gazette Citation */}
-      {martyr.awards && martyr.awards.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="font-display text-2xl font-semibold text-zinc-100 flex items-center gap-2">
-            <Award className="w-5 h-5 text-amber-500" />
-            <span>Official Gazette Citation</span>
-          </h2>
-
+      {awards.length > 0 && (
+        <Section
+          title={
+            <span className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-[#D96B27]" aria-hidden="true" />
+              Official Gazette Citation
+            </span>
+          }
+        >
           <div className="space-y-4">
-            {martyr.awards.map((award, idx) => (
-              <div key={idx} className="bg-zinc-900/30 border border-amber-900/40 rounded-xl p-6 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/80 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-display text-xl font-bold text-amber-400">{award.name}</span>
+            {awards.map((award, idx) => (
+              <article
+                key={`${award.name}-${idx}`}
+                className="space-y-4 rounded-xl border border-[#D96B27]/30 bg-white/80 p-5 shadow-xs sm:p-6"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 pb-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-display text-lg font-bold text-[#C25016] sm:text-xl">
+                      {award.name}
+                    </h3>
                     {award.posthumous && (
-                      <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                      <span className="rounded bg-stone-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-stone-700">
                         Posthumous
                       </span>
                     )}
                   </div>
-                  {award.year && <span className="text-xs text-zinc-400">Award Year: {award.year}</span>}
+                  {award.year && (
+                    <span className="text-xs text-stone-600">Award year: {award.year}</span>
+                  )}
                 </div>
 
                 {award.citation && (
-                  <blockquote className="text-sm text-zinc-300 leading-relaxed font-serif italic border-l-2 border-amber-600 pl-4 py-1">
-                    "{award.citation}"
+                  <blockquote className="border-l-2 border-[#D96B27] py-1 pl-4 font-display text-base italic leading-relaxed text-stone-800">
+                    “{award.citation}”
                   </blockquote>
                 )}
 
                 {award.gazetteRef && (
-                  <div className="text-xs text-zinc-400 font-mono bg-zinc-950/60 p-2.5 rounded-lg border border-zinc-900">
-                    <span className="text-zinc-500">Gazette Reference:</span> {award.gazetteRef}
-                  </div>
+                  <p className="rounded-lg border border-stone-200 bg-stone-50 p-2.5 font-mono text-[11px] text-stone-700">
+                    <span className="text-stone-500">Gazette reference:</span> {award.gazetteRef}
+                  </p>
                 )}
-              </div>
+              </article>
             ))}
           </div>
-        </section>
+        </Section>
       )}
 
-      {/* Biography */}
       {martyr.biography && (
-        <section className="space-y-3">
-          <h2 className="font-display text-2xl font-semibold text-zinc-100">Biography</h2>
-          <p className="text-sm text-zinc-300 leading-relaxed bg-zinc-900/20 border border-zinc-800/60 p-6 rounded-xl">
+        <Section title="Biography">
+          <p className="rounded-xl border border-stone-300 bg-white/70 p-5 text-sm leading-relaxed text-stone-800 sm:p-6">
             {martyr.biography}
           </p>
-        </section>
+        </Section>
       )}
 
-      {/* Linked Memorials */}
-      {martyr.memorials && martyr.memorials.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="font-display text-2xl font-semibold text-zinc-100 flex items-center gap-2">
-            <Landmark className="w-5 h-5 text-amber-500" />
-            <span>Honoured at War Memorials</span>
-          </h2>
-
-          <div className="grid grid-cols-2 gap-3">
-            {martyr.memorials.map((mem) => (
-              <Link
-                key={mem._id || mem.slug}
-                to={`/memorials/${mem.slug}`}
-                className="bg-zinc-900/40 border border-zinc-800 p-4 rounded-xl hover:border-amber-600/50 transition-colors flex items-center justify-between"
-              >
-                <div>
-                  <div className="font-medium text-sm text-zinc-200">{mem.name}</div>
-                  <div className="text-xs text-zinc-400">
-                    {[mem.location?.city, mem.location?.state].filter(Boolean).join(", ")}
-                  </div>
-                </div>
-                <ExternalLink className="w-4 h-4 text-zinc-500" />
-              </Link>
+      {memorials.length > 0 && (
+        <Section
+          title={
+            <span className="flex items-center gap-2">
+              <Landmark className="h-5 w-5 text-[#D96B27]" aria-hidden="true" />
+              Honoured at War Memorials
+            </span>
+          }
+        >
+          <PersonGrid>
+            {memorials.map((memorial) => (
+              <PersonLink
+                key={recordId(memorial) ?? memorial.slug}
+                to={`/memorials/${memorial.slug}`}
+                name={memorial.name}
+                detail={memorialLocation(memorial, "")}
+              />
             ))}
-          </div>
-        </section>
+          </PersonGrid>
+        </Section>
       )}
 
-      {/* Primary Sources & Provenance */}
-      {martyr.sources && martyr.sources.length > 0 && (
-        <section className="space-y-3 border-t border-zinc-900 pt-6">
-          <h2 className="font-display text-xl font-semibold text-zinc-100 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            <span>Verified Sources & Provenance</span>
-          </h2>
-          <ul className="space-y-2 text-xs">
-            {martyr.sources.map((src, idx) => (
-              <li key={idx} className="bg-zinc-950 border border-zinc-800/80 p-3 rounded-lg flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <span className="font-semibold text-zinc-300">{src.title}</span>
-                  {src.publisher && <span className="text-zinc-500 ml-2">({src.publisher})</span>}
-                  <span className="text-zinc-500 block text-[11px]">Backing claim: <code className="text-amber-500">{src.field}</code></span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 text-[10px] uppercase font-bold">
-                    {src.tier} source
+      {sources.length > 0 && (
+        <Section
+          className="border-t border-stone-300 pt-6"
+          title={
+            <span className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-[#2E5E2A]" aria-hidden="true" />
+              Verified Sources &amp; Provenance
+            </span>
+          }
+        >
+          <ul className="space-y-2">
+            {sources.map((source, idx) => (
+              <li
+                key={`${source.title}-${idx}`}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-stone-300 bg-white/70 p-3 text-xs"
+              >
+                <div className="min-w-0">
+                  <span className="font-semibold text-stone-800">{source.title}</span>
+                  {source.publisher && (
+                    <span className="ml-2 text-stone-500">({source.publisher})</span>
+                  )}
+                  <span className="mt-0.5 block text-[11px] text-stone-500">
+                    Backing claim:{" "}
+                    <code className="font-mono text-[#C25016]">{source.field}</code>
                   </span>
-                  {src.url && (
-                    <a href={src.url} target="_blank" rel="noreferrer" className="text-amber-500 hover:underline flex items-center gap-1">
-                      Link <ExternalLink className="w-3 h-3" />
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="rounded border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-800">
+                    {source.tier} source
+                  </span>
+                  {source.url && (
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 font-semibold text-[#C25016] hover:underline"
+                    >
+                      Link
+                      <ExternalLink className="h-3 w-3" aria-hidden="true" />
                     </a>
                   )}
                 </div>
               </li>
             ))}
           </ul>
-        </section>
+        </Section>
       )}
-    </div>
+    </PageContainer>
   );
 }

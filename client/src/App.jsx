@@ -15,11 +15,7 @@ const AdminLogin = lazy(() => import("./pages/AdminLogin.jsx"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard.jsx"));
 
 function PageLoader() {
-  return (
-    <div className="py-24 text-center text-zinc-500 text-xs font-medium tracking-wide">
-      Loading...
-    </div>
-  );
+  return <div className="py-24 text-center text-sm text-stone-500">Loading…</div>;
 }
 
 export default function App() {
@@ -39,7 +35,7 @@ export default function App() {
           <Route path="admin/dashboard" element={<AdminDashboard />} />
           <Route
             path="*"
-            element={<div className="p-16 text-center text-zinc-500 text-sm">Page not found.</div>}
+            element={<div className="p-16 text-center text-sm text-stone-500">Page not found.</div>}
           />
         </Route>
       </Routes>

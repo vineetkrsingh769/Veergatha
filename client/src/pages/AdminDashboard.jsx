@@ -1,5 +1,18 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  Shield,
+  Award,
+  Landmark,
+  Swords,
+  LogOut,
+  CheckCircle2,
+  Plus,
+  Trash2,
+  X,
+  AlertCircle,
+} from "lucide-react";
+
 import {
   fetchMe,
   fetchAdminMartyrs,
@@ -9,357 +22,413 @@ import {
   updateAdminMartyr,
   deleteAdminMartyr,
 } from "../lib/api";
-import { Shield, Award, Landmark, Swords, LogOut, CheckCircle2, Plus, Trash2, Edit3, X } from "lucide-react";
+import { clearSession, isAuthenticated } from "../lib/auth";
+import { getErrorMessage } from "../hooks/useApi";
+import { SERVICE_BRANCHES, STATUS_OPTIONS, VERIFICATION_STATUS } from "../lib/constants";
+import { displayName, memorialLocation, recordId, conflictYears } from "../lib/format";
+import {
+  EmptyState,
+  Loading,
+  PageContainer,
+  VerificationBadge,
+} from "../components/ui";
+import { Button, Field, SelectField } from "../components/ui/Field.jsx";
+
+const TABS = [
+  { key: "martyrs", label: "Recipients", icon: Award },
+  { key: "memorials", label: "Memorials", icon: Landmark },
+  { key: "wars", label: "Conflicts", icon: Swords },
+];
+
+const BLANK_RECORD = {
+  slug: "",
+  fullName: "",
+  rank: "",
+  serviceBranch: "Army",
+  regiment: "",
+  status: STATUS_OPTIONS[0].value,
+  verificationStatus: "draft",
+};
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("martyrs");
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
-  const [martyrs, setMartyrs] = useState([]);
-  const [memorials, setMemorials] = useState([]);
-  const [wars, setWars] = useState([]);
+  const [tab, setTab] = useState("martyrs");
   const [statusFilter, setStatusFilter] = useState("");
-
+  const [records, setRecords] = useState({ martyrs: [], memorials: [], wars: [] });
+  const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [newMartyr, setNewMartyr] = useState({
-    slug: "",
-    fullName: "",
-    rank: "Captain",
-    serviceBranch: "Army",
-    regiment: "",
-    status: "fell-in-action",
-    verificationStatus: "draft",
-  });
 
+  const signOut = useCallback(() => {
+    clearSession();
+    navigate("/admin/login");
+  }, [navigate]);
+
+  // Auth check runs once. It used to share an effect with the data load, so
+  // every filter change re-verified the session against /auth/me.
   useEffect(() => {
-    const token = localStorage.getItem("veergatha_token") || localStorage.getItem("smriti_token");
-    if (!token) {
+    if (!isAuthenticated()) {
       navigate("/admin/login");
       return;
     }
 
+    let active = true;
     fetchMe()
       .then((data) => {
-        setUser(data.user);
-        loadDashboardData();
+        if (active) setUser(data.user);
       })
       .catch(() => {
-        localStorage.removeItem("veergatha_token");
-        localStorage.removeItem("smriti_token");
-        navigate("/admin/login");
+        if (active) signOut();
       })
-      .finally(() => setLoading(false));
-  }, [navigate, statusFilter]);
+      .finally(() => {
+        if (active) setCheckingAuth(false);
+      });
 
-  const loadDashboardData = () => {
+    return () => {
+      active = false;
+    };
+  }, [navigate, signOut]);
+
+  const loadRecords = useCallback(async () => {
     const params = statusFilter ? { status: statusFilter } : {};
-    Promise.all([
-      fetchAdminMartyrs(params).catch(() => ({ martyrs: [] })),
-      fetchAdminMemorials(params).catch(() => ({ memorials: [] })),
-      fetchAdminWars().catch(() => ({ wars: [] })),
-    ]).then(([martyrRes, memRes, warRes]) => {
-      setMartyrs(martyrRes.martyrs || []);
-      setMemorials(memRes.memorials || []);
-      setWars(warRes.wars || []);
-    });
-  };
+    setError("");
 
-  const handleCreateMartyr = async (e) => {
-    e.preventDefault();
     try {
-      await createAdminMartyr({
-        slug: newMartyr.slug.toLowerCase().trim(),
-        fullName: newMartyr.fullName,
-        rank: newMartyr.rank,
-        serviceBranch: newMartyr.serviceBranch,
-        regiment: newMartyr.regiment,
-        status: newMartyr.status,
-        verification: { status: newMartyr.verificationStatus },
+      const [martyrRes, memorialRes, warRes] = await Promise.all([
+        fetchAdminMartyrs(params),
+        fetchAdminMemorials(params),
+        fetchAdminWars(),
+      ]);
+      setRecords({
+        martyrs: martyrRes.martyrs ?? [],
+        memorials: memorialRes.memorials ?? [],
+        wars: warRes.wars ?? [],
       });
-      setShowModal(false);
-      loadDashboardData();
     } catch (err) {
-      alert(err.response?.data?.error || err.message || "Failed to create record");
+      setError(getErrorMessage(err, "Could not load records"));
     }
-  };
+  }, [statusFilter]);
 
-  const toggleVerificationStatus = async (martyr) => {
-    const current = martyr.verification?.status || "draft";
-    const nextStatus = current === "verified" ? "draft" : "verified";
+  useEffect(() => {
+    if (!user) return;
+    loadRecords();
+  }, [user, loadRecords]);
+
+  async function toggleVerification(record) {
+    const current = record.verification?.status ?? "draft";
+    const next = current === "verified" ? "draft" : "verified";
+
     try {
-      await updateAdminMartyr(martyr._id || martyr.id, {
-        verification: { status: nextStatus },
-      });
-      loadDashboardData();
+      await updateAdminMartyr(recordId(record), { verification: { status: next } });
+      await loadRecords();
     } catch (err) {
-      alert(err.response?.data?.error || err.message || "Status update failed");
+      setError(getErrorMessage(err, "Status update failed"));
     }
-  };
-
-  const handleDeleteMartyr = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this record?")) return;
-    try {
-      await deleteAdminMartyr(id);
-      loadDashboardData();
-    } catch (err) {
-      alert(err.response?.data?.error || err.message || "Delete failed");
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("veergatha_token");
-    localStorage.removeItem("smriti_token");
-    navigate("/admin/login");
-  };
-
-  if (loading) {
-    return <div className="py-24 text-center text-zinc-500 text-sm">Verifying editorial access...</div>;
   }
 
+  async function removeRecord(record) {
+    if (!window.confirm(`Delete “${displayName(record)}”? This cannot be undone.`)) return;
+
+    try {
+      await deleteAdminMartyr(recordId(record));
+      await loadRecords();
+    } catch (err) {
+      setError(getErrorMessage(err, "Delete failed"));
+    }
+  }
+
+  async function createRecord(form) {
+    await createAdminMartyr({
+      slug: form.slug.toLowerCase().trim(),
+      fullName: form.fullName.trim(),
+      rank: form.rank.trim() || undefined,
+      serviceBranch: form.serviceBranch,
+      regiment: form.regiment.trim() || undefined,
+      status: form.status,
+      verification: { status: form.verificationStatus },
+    });
+    setShowModal(false);
+    await loadRecords();
+  }
+
+  if (checkingAuth) return <Loading label="Verifying editorial access…" />;
+
+  const counts = {
+    martyrs: records.martyrs.length,
+    memorials: records.memorials.length,
+    wars: records.wars.length,
+  };
+
   return (
-    <div className="py-8 px-8 max-w-7xl mx-auto space-y-8">
-      {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-900 pb-6">
+    <PageContainer className="space-y-6">
+      <header className="flex flex-col gap-4 border-b border-stone-300 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-amber-500" />
-            <h1 className="font-display text-3xl text-zinc-100 font-semibold">Editorial Control Panel</h1>
-          </div>
-          <p className="text-xs text-zinc-400">Logged in as {user?.email} ({user?.role})</p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-zinc-950 font-semibold text-xs rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Record</span>
-          </button>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-medium rounded-lg hover:border-zinc-700 transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Logout</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs & Status Filter */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-3 text-xs">
-        <div className="flex space-x-6 font-medium">
-          <button
-            onClick={() => setActiveTab("martyrs")}
-            className={`flex items-center gap-1.5 pb-3 ${
-              activeTab === "martyrs" ? "text-amber-500 border-b-2 border-amber-500 font-bold" : "text-zinc-400"
-            }`}
-          >
-            <Award className="w-4 h-4" />
-            <span>Recipients ({martyrs.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("memorials")}
-            className={`flex items-center gap-1.5 pb-3 ${
-              activeTab === "memorials" ? "text-amber-500 border-b-2 border-amber-500 font-bold" : "text-zinc-400"
-            }`}
-          >
-            <Landmark className="w-4 h-4" />
-            <span>Memorials ({memorials.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("wars")}
-            className={`flex items-center gap-1.5 pb-3 ${
-              activeTab === "wars" ? "text-amber-500 border-b-2 border-amber-500 font-bold" : "text-zinc-400"
-            }`}
-          >
-            <Swords className="w-4 h-4" />
-            <span>Conflicts ({wars.length})</span>
-          </button>
+          <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-[#1E431B] sm:text-3xl">
+            <Shield className="h-5 w-5 text-[#D96B27]" aria-hidden="true" />
+            Editorial Control Panel
+          </h1>
+          <p className="text-xs text-stone-600">
+            Signed in as {user?.email} ({user?.role})
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-zinc-500">Filter Verification:</span>
+          <Button onClick={() => setShowModal(true)}>
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Add Record
+          </Button>
+          <Button variant="secondary" onClick={signOut}>
+            <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+            Sign out
+          </Button>
+        </div>
+      </header>
+
+      {error && (
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"
+        >
+          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3 border-b border-stone-300 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-1 overflow-x-auto" role="tablist">
+          {TABS.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 pb-2.5 text-xs font-semibold transition-colors ${
+                tab === key
+                  ? "border-[#D96B27] text-[#C25016]"
+                  : "border-transparent text-stone-500 hover:text-stone-800"
+              }`}
+            >
+              <Icon className="h-4 w-4" aria-hidden="true" />
+              {label} ({counts[key]})
+            </button>
+          ))}
+        </div>
+
+        <label className="flex items-center gap-2 text-xs text-stone-600">
+          <span className="shrink-0">Verification:</span>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-zinc-200"
+            className="rounded border border-stone-300 bg-white px-2 py-1 text-stone-800 focus:border-[#D96B27] focus:outline-none"
           >
-            <option value="">All Statuses</option>
-            <option value="draft">Draft</option>
-            <option value="in-review">In Review</option>
-            <option value="verified">Verified</option>
+            <option value="">All statuses</option>
+            {VERIFICATION_STATUS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
-        </div>
+        </label>
       </div>
 
-      {/* Tab Contents */}
-      {activeTab === "martyrs" && (
-        <div className="space-y-4">
-          <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-x-auto text-xs">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-zinc-800 bg-zinc-950 text-zinc-400">
-                  <th className="p-3">Name</th>
-                  <th className="p-3">Branch & Regiment</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Verification</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
-                {martyrs.map((m) => (
-                  <tr key={m._id || m.slug} className="hover:bg-zinc-900/60">
-                    <td className="p-3 font-semibold text-zinc-100">{m.rank} {m.fullName}</td>
-                    <td className="p-3">{m.regiment || m.serviceBranch}</td>
-                    <td className="p-3 font-mono text-[11px]">{m.status}</td>
-                    <td className="p-3">
-                      <button
-                        onClick={() => toggleVerificationStatus(m)}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] uppercase font-bold cursor-pointer transition-colors ${
-                          m.verification?.status === "verified"
-                            ? "bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 hover:bg-emerald-900/60"
-                            : "bg-amber-950/60 border border-amber-800/40 text-amber-400 hover:bg-amber-900/60"
-                        }`}
-                      >
-                        <CheckCircle2 className="w-3 h-3" />
-                        {m.verification?.status || "draft"}
-                      </button>
-                    </td>
-                    <td className="p-3 text-right space-x-2">
-                      <button
-                        onClick={() => handleDeleteMartyr(m._id || m.id)}
-                        className="p-1.5 text-zinc-500 hover:text-red-400 transition-colors"
-                        title="Delete Record"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {tab === "martyrs" && (
+        <RecordTable
+          columns={["Name", "Branch & regiment", "Status", "Verification", ""]}
+          rows={records.martyrs}
+          empty="No recipient records match this filter."
+          renderRow={(m) => (
+            <tr key={recordId(m) ?? m.slug} className="hover:bg-stone-50">
+              <td className="p-3 font-semibold text-[#1A241A]">{displayName(m)}</td>
+              <td className="p-3 text-stone-700">{m.regiment || m.serviceBranch}</td>
+              <td className="p-3 font-mono text-[11px] text-stone-600">{m.status}</td>
+              <td className="p-3">
+                <button
+                  onClick={() => toggleVerification(m)}
+                  title="Toggle verification"
+                  className="inline-flex items-center gap-1"
+                >
+                  <CheckCircle2 className="h-3 w-3 text-stone-400" aria-hidden="true" />
+                  <VerificationBadge status={m.verification?.status} />
+                </button>
+              </td>
+              <td className="p-3 text-right">
+                <button
+                  onClick={() => removeRecord(m)}
+                  title="Delete record"
+                  className="p-1.5 text-stone-400 transition-colors hover:text-rose-600"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </td>
+            </tr>
+          )}
+        />
       )}
 
-      {/* Modal for adding record */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="font-display text-lg font-bold text-zinc-100">Add New Recipient Record</h3>
-              <button onClick={() => setShowModal(false)} className="text-zinc-500 hover:text-zinc-300">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateMartyr} className="space-y-3 text-xs">
-              <div>
-                <label className="text-zinc-400 block mb-1">Slug (unique URL handle)</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. vikram-batra"
-                  value={newMartyr.slug}
-                  onChange={(e) => setNewMartyr({ ...newMartyr, slug: e.target.value })}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-zinc-100"
-                />
-              </div>
-
-              <div>
-                <label className="text-zinc-400 block mb-1">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Full Name"
-                  value={newMartyr.fullName}
-                  onChange={(e) => setNewMartyr({ ...newMartyr, fullName: e.target.value })}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-zinc-100"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-zinc-400 block mb-1">Rank</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Captain"
-                    value={newMartyr.rank}
-                    onChange={(e) => setNewMartyr({ ...newMartyr, rank: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-zinc-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-zinc-400 block mb-1">Service Branch</label>
-                  <select
-                    value={newMartyr.serviceBranch}
-                    onChange={(e) => setNewMartyr({ ...newMartyr, serviceBranch: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-zinc-100"
-                  >
-                    <option value="Army">Army</option>
-                    <option value="Navy">Navy</option>
-                    <option value="Air Force">Air Force</option>
-                    <option value="BSF">BSF</option>
-                    <option value="CRPF">CRPF</option>
-                    <option value="Assam Rifles">Assam Rifles</option>
-                    <option value="ITBP">ITBP</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-zinc-400 block mb-1">Regiment / Unit</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 13 Jammu & Kashmir Rifles"
-                  value={newMartyr.regiment}
-                  onChange={(e) => setNewMartyr({ ...newMartyr, regiment: e.target.value })}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-zinc-100"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-zinc-400 block mb-1">Action Status</label>
-                  <select
-                    value={newMartyr.status}
-                    onChange={(e) => setNewMartyr({ ...newMartyr, status: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-zinc-100"
-                  >
-                    <option value="fell-in-action">Fell in Action</option>
-                    <option value="survived">Survived</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-zinc-400 block mb-1">Verification Status</label>
-                  <select
-                    value={newMartyr.verificationStatus}
-                    onChange={(e) => setNewMartyr({ ...newMartyr, verificationStatus: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-zinc-100"
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="in-review">In Review</option>
-                    <option value="verified">Verified</option>
-                  </select>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-2 bg-amber-600 hover:bg-amber-500 text-zinc-950 font-bold text-xs rounded transition-colors mt-2"
-              >
-                Create Record
-              </button>
-            </form>
-          </div>
-        </div>
+      {tab === "memorials" && (
+        <RecordTable
+          columns={["Name", "Location", "Inaugurated", "Verification"]}
+          rows={records.memorials}
+          empty="No memorial records match this filter."
+          renderRow={(m) => (
+            <tr key={recordId(m) ?? m.slug} className="hover:bg-stone-50">
+              <td className="p-3 font-semibold text-[#1A241A]">{m.name}</td>
+              <td className="p-3 text-stone-700">{memorialLocation(m)}</td>
+              <td className="p-3 text-stone-700">{m.inauguratedYear ?? "—"}</td>
+              <td className="p-3">
+                <VerificationBadge status={m.verification?.status} />
+              </td>
+            </tr>
+          )}
+        />
       )}
+
+      {tab === "wars" && (
+        <RecordTable
+          columns={["Name", "Type", "Years", "Verification"]}
+          rows={records.wars}
+          empty="No conflicts recorded yet."
+          renderRow={(w) => (
+            <tr key={recordId(w) ?? w.slug} className="hover:bg-stone-50">
+              <td className="p-3 font-semibold text-[#1A241A]">{w.name}</td>
+              <td className="p-3 capitalize text-stone-700">{w.type}</td>
+              <td className="p-3 text-stone-700">{conflictYears(w)}</td>
+              <td className="p-3">
+                <VerificationBadge status={w.verification?.status} />
+              </td>
+            </tr>
+          )}
+        />
+      )}
+
+      {showModal && <NewRecordModal onClose={() => setShowModal(false)} onCreate={createRecord} />}
+    </PageContainer>
+  );
+}
+
+function RecordTable({ columns, rows, empty, renderRow }) {
+  if (rows.length === 0) return <EmptyState title={empty} />;
+
+  return (
+    <div className="overflow-x-auto rounded-xl border border-stone-300 bg-white/80">
+      <table className="w-full border-collapse text-left text-xs">
+        <thead>
+          <tr className="border-b border-stone-300 bg-stone-100 text-stone-600">
+            {columns.map((col, i) => (
+              <th key={col || i} scope="col" className="whitespace-nowrap p-3 font-semibold">
+                {col}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-stone-200">{rows.map(renderRow)}</tbody>
+      </table>
+    </div>
+  );
+}
+
+function NewRecordModal({ onClose, onCreate }) {
+  const [form, setForm] = useState(BLANK_RECORD);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  async function submit(e) {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      await onCreate(form);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to create record"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Add new recipient record"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-2xl border border-stone-300 bg-[#FAF7F2] p-5 shadow-lg sm:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-stone-300 pb-3">
+          <h2 className="font-display text-lg font-bold text-[#1E431B]">Add Recipient Record</h2>
+          <button onClick={onClose} aria-label="Close" className="text-stone-400 hover:text-stone-700">
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        {error && (
+          <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={submit} className="space-y-3">
+          <Field
+            label="Slug (unique URL handle)"
+            required
+            placeholder="e.g. vikram-batra"
+            hint="Lowercase words separated by hyphens."
+            value={form.slug}
+            onChange={set("slug")}
+          />
+          <Field
+            label="Full name"
+            required
+            placeholder="e.g. Vikram Batra"
+            value={form.fullName}
+            onChange={set("fullName")}
+          />
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Rank" placeholder="e.g. Captain" value={form.rank} onChange={set("rank")} />
+            <SelectField
+              label="Service branch"
+              options={SERVICE_BRANCHES}
+              value={form.serviceBranch}
+              onChange={set("serviceBranch")}
+            />
+          </div>
+
+          <Field
+            label="Regiment / unit"
+            placeholder="e.g. 13 Jammu &amp; Kashmir Rifles"
+            value={form.regiment}
+            onChange={set("regiment")}
+          />
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <SelectField
+              label="Action status"
+              options={STATUS_OPTIONS}
+              value={form.status}
+              onChange={set("status")}
+            />
+            <SelectField
+              label="Verification"
+              options={VERIFICATION_STATUS}
+              value={form.verificationStatus}
+              onChange={set("verificationStatus")}
+            />
+          </div>
+
+          <Button type="submit" disabled={saving} className="w-full py-2.5">
+            {saving ? "Creating…" : "Create Record"}
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }

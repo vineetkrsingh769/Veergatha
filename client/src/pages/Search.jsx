@@ -1,155 +1,139 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Search as SearchIcon, Award, Landmark, Swords } from "lucide-react";
+
 import { searchArchive } from "../lib/api";
-import { Search as SearchIcon, Award, Landmark, Swords, ChevronRight } from "lucide-react";
+import { useApi } from "../hooks/useApi";
+import { useDebounced } from "../hooks/useDebounced";
+import { displayName, memorialLocation, recordId } from "../lib/format";
+import {
+  EmptyState,
+  ErrorState,
+  Loading,
+  PageContainer,
+  PageHeader,
+  PersonGrid,
+  PersonLink,
+  Section,
+} from "../components/ui";
+
+const MIN_QUERY = 2;
+
+function ResultGroup({ icon: Icon, label, count, items, empty, render }) {
+  return (
+    <Section
+      title={
+        <span className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-[#D96B27]" aria-hidden="true" />
+          {label} ({count})
+        </span>
+      }
+    >
+      {items.length === 0 ? (
+        <p className="text-xs text-stone-500">{empty}</p>
+      ) : (
+        <PersonGrid>{items.map(render)}</PersonGrid>
+      )}
+    </Section>
+  );
+}
 
 export default function SearchPage() {
-  const [query, setQuery] = useState("Kargil");
-  const [results, setResults] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState("");
+  const term = useDebounced(query.trim(), 300);
+  const ready = term.length >= MIN_QUERY;
 
-  useEffect(() => {
-    if (query.trim().length < 2) {
-      setResults(null);
-      return;
-    }
+  const { data, loading, error, refetch } = useApi(() => searchArchive(term), [term], {
+    skip: !ready,
+  });
 
-    const timer = setTimeout(() => {
-      setLoading(true);
-      searchArchive(query.trim())
-        .then((data) => setResults(data))
-        .catch(() => setResults(null))
-        .finally(() => setLoading(false));
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [query]);
+  const martyrs = data?.martyrs ?? [];
+  const memorials = data?.memorials ?? [];
+  const wars = data?.wars ?? [];
+  const counts = data?.counts ?? {};
 
   return (
-    <div className="py-8 px-8 max-w-5xl mx-auto space-y-8">
-      <div className="space-y-2 border-b border-zinc-900 pb-6">
-        <h1 className="font-display text-4xl text-zinc-100 font-semibold">
-          Search Digital Archive
-        </h1>
-        <p className="text-sm text-zinc-400">
-          Query across recipient records, war memorials, and conflicts.
-        </p>
-      </div>
+    <PageContainer width="medium" className="space-y-6 sm:space-y-8">
+      <PageHeader
+        title="Search Digital Archive"
+        subtitle="Query across recipient records, war memorials, and conflicts."
+      />
 
       <div className="relative max-w-2xl">
-        <SearchIcon className="w-5 h-5 absolute left-4 top-3.5 text-zinc-500" />
+        <SearchIcon
+          className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-stone-400"
+          aria-hidden="true"
+        />
         <input
-          type="text"
-          placeholder="Search by name, regiment, location, or conflict..."
+          type="search"
+          aria-label="Search the archive"
+          placeholder="Search by name, regiment, location, or conflict…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl pl-12 pr-4 py-3 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-600 font-sans text-sm shadow-inner"
+          className="w-full rounded-xl border border-stone-300 bg-white/85 py-3 pl-12 pr-4 text-sm text-stone-800 placeholder-stone-400 shadow-xs focus:border-[#D96B27] focus:outline-none"
         />
       </div>
 
-      {loading ? (
-        <div className="py-12 text-center text-zinc-500 text-sm">Searching archive...</div>
-      ) : !results ? (
-        <div className="py-12 text-center text-zinc-500 text-sm">
-          Type at least 2 characters to search across all records.
-        </div>
+      {!ready ? (
+        <EmptyState
+          icon={SearchIcon}
+          title="Start typing to search"
+          hint={`Enter at least ${MIN_QUERY} characters to search across every record.`}
+        />
+      ) : loading ? (
+        <Loading label="Searching the archive…" />
+      ) : error ? (
+        <ErrorState message={error} onRetry={refetch} />
       ) : (
         <div className="space-y-8">
-          {/* Martyrs Results */}
-          <section className="space-y-3">
-            <h2 className="font-display text-xl font-semibold text-zinc-100 flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-amber-500" />
-                Gallantry Recipients ({results.counts?.martyrs || 0})
-              </span>
-            </h2>
-
-            {results.martyrs?.length === 0 ? (
-              <p className="text-xs text-zinc-500">No recipient records match "{query}".</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {results.martyrs.map((m) => (
-                  <Link
-                    key={m.id || m.slug}
-                    to={`/martyrs/${m.slug}`}
-                    className="bg-zinc-900/40 border border-zinc-800 p-4 rounded-xl hover:border-amber-600/50 transition-colors flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="font-bold text-sm text-zinc-100">
-                        {m.rank} {m.fullName}
-                      </div>
-                      <div className="text-xs text-zinc-400 mt-0.5">{m.regiment}</div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-amber-500" />
-                  </Link>
-                ))}
-              </div>
+          <ResultGroup
+            icon={Award}
+            label="Gallantry Recipients"
+            count={counts.martyrs ?? martyrs.length}
+            items={martyrs}
+            empty={`No recipient records match “${term}”.`}
+            render={(person) => (
+              <PersonLink
+                key={recordId(person) ?? person.slug}
+                to={`/martyrs/${person.slug}`}
+                name={displayName(person)}
+                detail={person.regiment}
+              />
             )}
-          </section>
+          />
 
-          {/* Memorials Results */}
-          <section className="space-y-3">
-            <h2 className="font-display text-xl font-semibold text-zinc-100 flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Landmark className="w-4 h-4 text-amber-500" />
-                War Memorials ({results.counts?.memorials || 0})
-              </span>
-            </h2>
-
-            {results.memorials?.length === 0 ? (
-              <p className="text-xs text-zinc-500">No memorials match "{query}".</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {results.memorials.map((mem) => (
-                  <Link
-                    key={mem.id || mem.slug}
-                    to={`/memorials/${mem.slug}`}
-                    className="bg-zinc-900/40 border border-zinc-800 p-4 rounded-xl hover:border-amber-600/50 transition-colors flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="font-bold text-sm text-zinc-100">{mem.name}</div>
-                      <div className="text-xs text-zinc-400 mt-0.5">
-                        {[mem.location?.city, mem.location?.state].filter(Boolean).join(", ")}
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-amber-500" />
-                  </Link>
-                ))}
-              </div>
+          <ResultGroup
+            icon={Landmark}
+            label="War Memorials"
+            count={counts.memorials ?? memorials.length}
+            items={memorials}
+            empty={`No memorials match “${term}”.`}
+            render={(memorial) => (
+              <PersonLink
+                key={recordId(memorial) ?? memorial.slug}
+                to={`/memorials/${memorial.slug}`}
+                name={memorial.name}
+                detail={memorialLocation(memorial, "")}
+              />
             )}
-          </section>
+          />
 
-          {/* Wars Results */}
-          <section className="space-y-3">
-            <h2 className="font-display text-xl font-semibold text-zinc-100 flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Swords className="w-4 h-4 text-amber-500" />
-                Conflicts & Operations ({results.counts?.wars || 0})
-              </span>
-            </h2>
-
-            {results.wars?.length === 0 ? (
-              <p className="text-xs text-zinc-500">No conflicts match "{query}".</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {results.wars.map((w) => (
-                  <Link
-                    key={w.id || w.slug}
-                    to={`/wars/${w.slug}`}
-                    className="bg-zinc-900/40 border border-zinc-800 p-4 rounded-xl hover:border-amber-600/50 transition-colors flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="font-bold text-sm text-zinc-100">{w.name}</div>
-                      <div className="text-xs text-zinc-400 mt-0.5 font-mono capitalize">{w.type}</div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-amber-500" />
-                  </Link>
-                ))}
-              </div>
+          <ResultGroup
+            icon={Swords}
+            label="Conflicts &amp; Operations"
+            count={counts.wars ?? wars.length}
+            items={wars}
+            empty={`No conflicts match “${term}”.`}
+            render={(war) => (
+              <PersonLink
+                key={recordId(war) ?? war.slug}
+                to={`/wars/${war.slug}`}
+                name={war.name}
+                detail={war.type}
+              />
             )}
-          </section>
+          />
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

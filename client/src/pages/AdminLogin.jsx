@@ -1,88 +1,91 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginAdmin } from "../lib/api";
 import { Shield, Lock, Mail, AlertCircle } from "lucide-react";
+
+import { loginAdmin } from "../lib/api";
+import { saveSession } from "../lib/auth";
+import { getErrorMessage } from "../hooks/useApi";
+import { Button, Field } from "../components/ui/Field.jsx";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("admin@veergatha.in");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setSubmitting(true);
 
     try {
-      const data = await loginAdmin({ email, password });
-      if (data.accessToken) {
-        localStorage.setItem("veergatha_token", data.accessToken);
-        navigate("/admin/dashboard");
-      }
+      const data = await loginAdmin(form);
+      // Persist the refresh token too — the /auth/refresh endpoint exists, but
+      // the old flow discarded it, so sessions died silently after 15 minutes.
+      saveSession(data);
+      navigate("/admin/dashboard");
     } catch (err) {
-      setError(err.response?.data?.error || err.message || "Login failed");
+      setError(getErrorMessage(err, "Login failed"));
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
-  };
+  }
 
   return (
-    <div className="py-16 px-4 max-w-md mx-auto space-y-6">
-      <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-full bg-amber-950/60 border border-amber-600/40 flex items-center justify-center text-amber-500 mx-auto">
-          <Shield className="w-6 h-6" />
-        </div>
-        <h1 className="font-display text-3xl font-bold text-zinc-100">Editorial Authentication</h1>
-        <p className="text-xs text-zinc-400">Gated access for archive editors and administrators.</p>
+    <div className="mx-auto max-w-md space-y-6 px-4 py-12 sm:py-16">
+      <div className="space-y-2 text-center">
+        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[#D96B27]/30 bg-[#D96B27]/10 text-[#C25016]">
+          <Shield className="h-6 w-6" aria-hidden="true" />
+        </span>
+        <h1 className="font-display text-2xl font-bold text-[#1E431B] sm:text-3xl">
+          Editorial Authentication
+        </h1>
+        <p className="text-xs text-stone-600">
+          Gated access for archive editors and administrators.
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-zinc-900/60 border border-zinc-800 p-6 rounded-2xl space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 rounded-2xl border border-stone-300 bg-white/85 p-5 shadow-xs sm:p-6"
+      >
         {error && (
-          <div className="bg-red-950/60 border border-red-800/60 text-red-400 text-xs p-3 rounded-lg flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+          <div
+            role="alert"
+            className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{error}</span>
           </div>
         )}
 
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-zinc-300">Email Address</label>
-          <div className="relative">
-            <Mail className="w-4 h-4 absolute left-3 top-3 text-zinc-500" />
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-600"
-              placeholder="editor@veergatha.in"
-            />
-          </div>
-        </div>
+        <Field
+          label="Email address"
+          icon={Mail}
+          type="email"
+          required
+          autoComplete="username"
+          placeholder="editor@veergatha.in"
+          value={form.email}
+          onChange={set("email")}
+        />
 
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-zinc-300">Password</label>
-          <div className="relative">
-            <Lock className="w-4 h-4 absolute left-3 top-3 text-zinc-500" />
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-600"
-              placeholder="••••••••••••"
-            />
-          </div>
-        </div>
+        <Field
+          label="Password"
+          icon={Lock}
+          type="password"
+          required
+          autoComplete="current-password"
+          placeholder="••••••••••••"
+          value={form.password}
+          onChange={set("password")}
+        />
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-zinc-950 font-semibold text-xs rounded-lg transition-colors disabled:opacity-50"
-        >
-          {loading ? "Authenticating..." : "Sign In"}
-        </button>
+        <Button type="submit" disabled={submitting} className="w-full py-2.5">
+          {submitting ? "Authenticating…" : "Sign In"}
+        </Button>
       </form>
     </div>
   );

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getToken } from "./auth";
 
 // In dev, VITE_API_URL is empty and Vite proxies /api to http://localhost:5000
 // In production, VITE_API_URL is the Render server URL (e.g., https://veergatha-api.onrender.com)
@@ -13,7 +14,7 @@ export const api = axios.create({
 
 // Request interceptor to attach JWT token for admin routes
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("veergatha_token") || localStorage.getItem("smriti_token");
+  const token = getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
