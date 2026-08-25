@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-saffron-50: #FFF7ED;
+  --color-saffron-100: #FFEDD5;
+  --color-saffron-500: #F97316;
+  --color-saffron-600: #D96B27;
+  --color-saffron-700: #C25016;
+
+  --color-tiranga-50: #F4F8F3;
+  --color-tiranga-100: #E3EDE1;
+  --color-tiranga-600: #2E5E2A;
+  --color-tiranga-700: #1E431B;
+  --color-tiranga-800: #142E12;
+  --color-tiranga-950: #0D1C0C;
+}
+
+:root {
+  --background: #FAF7F2;
+  --foreground: #1A241A;
+  --muted-foreground: #5C6B5B;
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --card-border: rgba(46, 94, 42, 0.16);
+  --saffron-accent: #D96B27;
+  --green-accent: #2E5E2A;
+}
+
+body {
+  background-color: #FAF7F2;
+  color: #1A241A;
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
