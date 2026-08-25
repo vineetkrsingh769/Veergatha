@@ -1,74 +1,180 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
-import { Search, LogIn } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Search, Menu, X } from "lucide-react";
+
+const NAV_ITEMS = [
+  { to: "/", label: "Home", end: true },
+  { to: "/martyrs", label: "Gallantry Awards" },
+  { to: "/memorials", label: "War Memorials" },
+  { to: "/wars", label: "Operations" },
+];
+
+/**
+ * Every item keeps identical padding, and the active marker is an `after`
+ * underline rather than a border. A border-bottom on the active item alone adds
+ * height to just that link, which is what made the row shift as you navigated.
+ */
+const navLinkClass = ({ isActive }) =>
+  [
+    "relative rounded-md px-3 py-2 text-sm font-medium transition-colors",
+    "after:absolute after:inset-x-3 after:bottom-0.5 after:h-0.5 after:rounded-full after:transition-colors",
+    isActive
+      ? "text-[#C25016] after:bg-[#D96B27]"
+      : "text-stone-700 after:bg-transparent hover:text-[#C25016]",
+  ].join(" ");
 
 export default function Layout() {
-  const navLinkClass = ({ isActive }) =>
-    `text-sm font-medium transition-colors hover:text-[#D96B27] ${isActive ? "text-[#D96B27] border-b-2 border-[#D96B27] pb-1 font-semibold" : "text-stone-700"
-    }`;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { pathname } = useLocation();
+
+  // Close the panel on navigation, or it stays open over the new page.
+  useEffect(() => setMenuOpen(false), [pathname]);
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#1A241A] flex flex-col font-sans">
-      {/* Header / Navigation */}
-      <header className="sticky top-0 z-50 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-stone-300/70">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between">
-
-          {/* Brand */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <img
-              src="/logo.png"
-              alt="Veergatha emblem"
-              width={36}
-              height={36}
-              className="h-9 w-9 shrink-0 transition-transform group-hover:scale-105"
-            />
-            <div className="leading-none">
-              <span className="font-display text-xl font-bold text-[#1A241A] tracking-tight block">
-                Veergatha
-              </span>
-              <span className="text-[10px] text-[#D96B27] uppercase tracking-[0.15em] font-semibold block mt-0.5">
-                Archive of Remembrance
-              </span>
+    <div className="flex min-h-screen flex-col bg-[#FAF7F2] font-sans text-[#1A241A]">
+      <header className="sticky top-0 z-50 border-b border-stone-300/70 bg-[#FAF7F2]/90 backdrop-blur-md">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/*
+            Three columns of 1fr / auto / 1fr. The outer columns are forced to
+            equal width, so the nav in the middle is centred against the page
+            rather than against whatever space the brand happens to leave.
+            justify-between could never do this, because the brand block is far
+            wider than the actions block.
+          */}
+          <div className="grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-4">
+            {/* Brand */}
+            <div className="flex min-w-0 justify-start">
+              <Link to="/" className="group flex min-w-0 items-center gap-2.5">
+                <img
+                  src="/logo.png"
+                  alt=""
+                  width={36}
+                  height={36}
+                  className="h-9 w-9 shrink-0 transition-transform group-hover:scale-105"
+                />
+                <span className="min-w-0 leading-none">
+                  <span className="block truncate font-display text-lg font-bold tracking-tight text-[#1A241A] sm:text-xl">
+                    Veergatha
+                  </span>
+                  <span className="mt-0.5 hidden truncate text-[10px] font-semibold uppercase tracking-[0.15em] text-[#D96B27] sm:block">
+                    Archive of Remembrance
+                  </span>
+                </span>
+              </Link>
             </div>
-          </Link>
 
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
-            <NavLink to="/" className={navLinkClass} end>
-              Home
-            </NavLink>
-            <NavLink to="/martyrs" className={navLinkClass}>
-              Gallantry Awards
-            </NavLink>
-            <NavLink to="/memorials" className={navLinkClass}>
-              War Memorials
-            </NavLink>
-            <NavLink to="/wars" className={navLinkClass}>
-              Operations
-            </NavLink>
-            <NavLink to="/search" className={navLinkClass}>
-              Search
-            </NavLink>
-          </nav>
+            {/* Centre nav */}
+            <nav className="hidden items-center gap-1 lg:flex">
+              {NAV_ITEMS.map(({ to, label, end }) => (
+                <NavLink key={to} to={to} end={end} className={navLinkClass}>
+                  {label}
+                </NavLink>
+              ))}
+            </nav>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            <Link
-              to="/search"
-              className="p-2 text-stone-500 hover:text-[#D96B27] hover:bg-stone-200/50 rounded-md transition-colors"
-              title="Search Archive"
-            >
-              <Search className="w-4.5 h-4.5" strokeWidth={1.75} />
-            </Link>
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2">
+              {/*
+                Icon-only until xl. At exactly lg the brand, four nav items and
+                three actions add up to slightly more than the available width,
+                and dropping the label is what buys the room back.
+              */}
+              <Link
+                to="/search"
+                aria-label="Search the archive"
+                className="hidden items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-stone-700 transition-colors hover:text-[#C25016] sm:flex"
+              >
+                <Search className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+                <span className="hidden xl:inline">Search</span>
+              </Link>
 
-            <Link
-              to="/admin/dashboard"
-              className="flex items-center gap-1.5 text-xs font-medium text-[#1E431B] hover:text-[#D96B27] border border-stone-300 hover:border-[#D96B27] bg-white/80 px-3 py-1.5 rounded-md transition-colors"
-            >
-              <LogIn className="w-3.5 h-3.5" strokeWidth={1.75} />
-              Staff Login
-            </Link>
+              <Link
+                to="/martyrs"
+                className="hidden rounded-full bg-[#1E431B] px-4 py-2 text-sm font-semibold text-[#FAF7F2] transition-colors hover:bg-[#163319] md:inline-flex"
+              >
+                Browse Archive
+              </Link>
+
+              <Link
+                to="/admin/dashboard"
+                className="hidden rounded-full border border-stone-400 px-4 py-2 text-sm font-semibold text-[#1E431B] transition-colors hover:border-[#D96B27] hover:text-[#C25016] md:inline-flex"
+              >
+                Staff Login
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setMenuOpen((open) => !open)}
+                aria-expanded={menuOpen}
+                aria-controls="mobile-nav"
+                aria-label={menuOpen ? "Close menu" : "Open menu"}
+                className="rounded-md p-2 text-stone-700 transition-colors hover:bg-stone-200/60 hover:text-[#C25016] lg:hidden"
+              >
+                {menuOpen ? (
+                  <X className="h-5 w-5" aria-hidden="true" />
+                ) : (
+                  <Menu className="h-5 w-5" aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile / tablet panel — below lg there was previously no nav at all. */}
+        {menuOpen && (
+          <nav
+            id="mobile-nav"
+            className="border-t border-stone-300/70 bg-[#FAF7F2] lg:hidden"
+          >
+            <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3 sm:px-6">
+              {NAV_ITEMS.map(({ to, label, end }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  className={({ isActive }) =>
+                    `rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-[#D96B27]/10 text-[#C25016]"
+                        : "text-stone-700 hover:bg-stone-200/60"
+                    }`
+                  }
+                >
+                  {label}
+                </NavLink>
+              ))}
+
+              <NavLink
+                to="/search"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-[#D96B27]/10 text-[#C25016]"
+                      : "text-stone-700 hover:bg-stone-200/60"
+                  }`
+                }
+              >
+                <Search className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+                Search
+              </NavLink>
+
+              <div className="mt-2 flex flex-col gap-2 border-t border-stone-300/70 pt-3">
+                <Link
+                  to="/martyrs"
+                  className="rounded-full bg-[#1E431B] px-4 py-2.5 text-center text-sm font-semibold text-[#FAF7F2] transition-colors hover:bg-[#163319]"
+                >
+                  Browse Archive
+                </Link>
+                <Link
+                  to="/admin/dashboard"
+                  className="rounded-full border border-stone-400 px-4 py-2.5 text-center text-sm font-semibold text-[#1E431B] transition-colors hover:border-[#D96B27] hover:text-[#C25016]"
+                >
+                  Staff Login
+                </Link>
+              </div>
+            </div>
+          </nav>
+        )}
       </header>
 
       {/* Main Content */}
