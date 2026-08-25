@@ -22,16 +22,23 @@ const navLinkClass = ({ isActive }) =>
       : "text-stone-700 after:bg-transparent hover:text-[#C25016]",
   ].join(" ");
 
+/**
+ * The min-w on the shell is what enforces the desktop lock. header, main and
+ * footer are all flex children of this column, so they stretch to its width and
+ * cannot fall short of it — which is exactly what the footer did while the
+ * minimum lived only on the inner content bands. Any future full-width section
+ * now inherits the same floor.
+ */
 export default function Layout() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#FAF7F2] font-sans text-[#1A241A]">
+    <div className="flex min-h-screen min-w-[1080px] flex-col bg-[#FAF7F2] font-sans text-[#1A241A]">
       <header className="sticky top-0 z-50 border-b border-stone-300/70 bg-[#FAF7F2]/90 backdrop-blur-md">
         {/*
-          Locked to a static desktop layout: no breakpoint variants and no
-          disclosure panel. min-w keeps the bar desktop-shaped, so a narrow
-          viewport scrolls the page sideways instead of reflowing.
+          Static desktop layout: no breakpoint variants and no disclosure panel.
+          The width floor comes from the shell; max-w-7xl here just bounds the
+          content band on wide screens.
         */}
-        <div className="mx-auto min-w-[1080px] max-w-7xl px-8">
+        <div className="mx-auto max-w-7xl px-8">
           {/*
             1fr / auto / 1fr. The outer columns are forced equal, so the nav
             centres against the page rather than against whatever space the

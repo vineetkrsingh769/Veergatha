@@ -1,17 +1,12 @@
 /**
  * Shared page chrome, locked to a desktop layout.
  *
- * min-w matches the header in Layout.jsx, so the bar and the page body scroll
- * sideways as one unit on a narrow viewport instead of the header holding still
- * while the content underneath reflows.
+ * The 1080px floor is enforced once on the shell in Layout.jsx rather than
+ * repeated here — `max` only bounds the content band on wide screens.
  */
 export function PageContainer({ children, width = "wide", className = "" }) {
   const max = width === "narrow" ? "max-w-3xl" : width === "medium" ? "max-w-5xl" : "max-w-7xl";
-  return (
-    <div className={`mx-auto w-full min-w-[1080px] ${max} px-8 py-8 ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`mx-auto w-full ${max} px-8 py-8 ${className}`}>{children}</div>;
 }
 
 export function PageHeader({ title, subtitle, eyebrow, actions }) {
