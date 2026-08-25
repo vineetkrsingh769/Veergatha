@@ -43,7 +43,7 @@ export default function MemorialDetail() {
       .join(", ") || "India";
 
   return (
-    <PageContainer width="medium" className="space-y-6 sm:space-y-8">
+    <PageContainer width="medium" className="space-y-8">
       <BackLink to="/memorials">Back to Memorials</BackLink>
 
       <DetailPanel

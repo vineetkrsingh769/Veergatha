@@ -59,7 +59,7 @@ export default function MartyrDetail() {
   const conflict = martyr.war?.name || martyr.operation || "—";
 
   return (
-    <PageContainer width="medium" className="space-y-6 sm:space-y-8">
+    <PageContainer width="medium" className="space-y-8">
       <BackLink to="/martyrs">Back to Recipients</BackLink>
 
       <DetailPanel
@@ -102,11 +102,11 @@ export default function MartyrDetail() {
             {awards.map((award, idx) => (
               <article
                 key={`${award.name}-${idx}`}
-                className="space-y-4 rounded-xl border border-[#D96B27]/30 bg-white/80 p-5 shadow-xs sm:p-6"
+                className="space-y-4 rounded-xl border border-[#D96B27]/30 bg-white/80 p-6 shadow-xs"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 pb-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-display text-lg font-bold text-[#C25016] sm:text-xl">
+                    <h3 className="font-display text-xl font-bold text-[#C25016]">
                       {award.name}
                     </h3>
                     {award.posthumous && (
@@ -139,7 +139,7 @@ export default function MartyrDetail() {
 
       {martyr.biography && (
         <Section title="Biography">
-          <p className="rounded-xl border border-stone-300 bg-white/70 p-5 text-sm leading-relaxed text-stone-800 sm:p-6">
+          <p className="rounded-xl border border-stone-300 bg-white/70 p-6 text-sm leading-relaxed text-stone-800">
             {martyr.biography}
           </p>
         </Section>

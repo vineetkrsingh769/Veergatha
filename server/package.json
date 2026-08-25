@@ -12,7 +12,8 @@
     "db:check": "node src/scripts/check-db.js",
     "db:seed": "node src/scripts/seedKargil.js",
     "check:models": "node src/scripts/check-models.js",
-    "check:auth": "node src/scripts/check-auth.js"
+    "check:auth": "node src/scripts/check-auth.js",
+    "check:schemas": "node src/scripts/check-schemas.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

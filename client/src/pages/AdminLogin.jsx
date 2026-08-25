@@ -34,7 +34,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-6 px-4 py-12 sm:py-16">
+    <div className="mx-auto max-w-md space-y-6 px-4 py-16">
       <div className="space-y-2 text-center">
         <img
           src="/logo.png"
@@ -43,7 +43,7 @@ export default function AdminLogin() {
           height={56}
           className="mx-auto h-14 w-14"
         />
-        <h1 className="font-display text-2xl font-bold text-[#1E431B] sm:text-3xl">
+        <h1 className="font-display text-3xl font-bold text-[#1E431B]">
           Editorial Authentication
         </h1>
         <p className="text-xs text-stone-600">
@@ -53,7 +53,7 @@ export default function AdminLogin() {
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 rounded-2xl border border-stone-300 bg-white/85 p-5 shadow-xs sm:p-6"
+        className="space-y-4 rounded-2xl border border-stone-300 bg-white/85 p-6 shadow-xs"
       >
         {error && (
           <div

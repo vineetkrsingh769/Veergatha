@@ -35,7 +35,7 @@ export function RecordCard({
           )}
 
           <div>
-            <h3 className="font-display text-lg font-bold text-[#1A241A] transition-colors group-hover:text-[#D96B27] sm:text-xl">
+            <h3 className="font-display text-xl font-bold text-[#1A241A] transition-colors group-hover:text-[#D96B27]">
               {title}
             </h3>
             {description && (
@@ -61,10 +61,10 @@ export function RecordCard({
   );
 }
 
-/** Responsive grid used by all three directories. */
+/** Card grid used by all three directories. Desktop-only layout. */
 export function CardGrid({ children, columns = 3 }) {
-  const cols = columns === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";
-  return <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${cols}`}>{children}</div>;
+  const cols = columns === 2 ? "grid-cols-2" : "grid-cols-3";
+  return <div className={`grid gap-4 ${cols}`}>{children}</div>;
 }
 
 /** Neutral pill for taxonomy values such as conflict type. */

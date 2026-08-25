@@ -16,7 +16,7 @@ export default function MemorialsList() {
   const memorials = data?.memorials ?? [];
 
   return (
-    <PageContainer className="space-y-6 sm:space-y-8">
+    <PageContainer className="space-y-8">
       <PageHeader
         title="War Memorials Directory"
         subtitle="Monuments, national war memorials, and regimental sanctuaries built to honour India's armed forces."

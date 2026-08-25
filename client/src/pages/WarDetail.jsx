@@ -38,7 +38,7 @@ export default function WarDetail() {
   const { war, martyrs = [] } = data;
 
   return (
-    <PageContainer width="medium" className="space-y-6 sm:space-y-8">
+    <PageContainer width="medium" className="space-y-8">
       <BackLink to="/wars">Back to Conflicts</BackLink>
 
       <DetailPanel

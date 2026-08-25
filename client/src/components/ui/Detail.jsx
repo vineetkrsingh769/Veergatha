@@ -26,13 +26,13 @@ export function Pill({ icon: Icon, children }) {
 
 export function DetailPanel({ pill, title, lede, aside, children }) {
   return (
-    <div className="space-y-5 rounded-2xl border border-stone-300 bg-white/85 p-5 shadow-xs sm:p-7">
+    <div className="space-y-5 rounded-2xl border border-stone-300 bg-white/85 p-7 shadow-xs">
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {pill}
           {aside}
         </div>
-        <h1 className="font-display text-3xl font-bold leading-tight text-[#1E431B] sm:text-4xl lg:text-5xl">
+        <h1 className="font-display text-5xl font-bold leading-tight text-[#1E431B]">
           {title}
         </h1>
         {lede && <p className="max-w-3xl text-sm leading-relaxed text-stone-700">{lede}</p>}
@@ -42,10 +42,10 @@ export function DetailPanel({ pill, title, lede, aside, children }) {
   );
 }
 
-/** Responsive definition grid. Collapses to one column on narrow screens. */
+/** Three-column definition grid. Desktop-only layout. */
 export function MetaGrid({ children }) {
   return (
-    <dl className="grid grid-cols-1 gap-4 border-t border-stone-200 pt-4 text-xs sm:grid-cols-2 lg:grid-cols-3">
+    <dl className="grid grid-cols-3 gap-4 border-t border-stone-200 pt-4 text-xs">
       {children}
     </dl>
   );
@@ -87,7 +87,7 @@ export function PersonLink({ to, name, detail, accent = false }) {
 }
 
 export function PersonGrid({ children }) {
-  return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>;
+  return <div className="grid grid-cols-2 gap-3">{children}</div>;
 }
 
 export function NotFound({ message, backTo, backLabel }) {

@@ -15,11 +15,11 @@ export function Pagination({ meta, onChange }) {
   return (
     <nav
       aria-label="Pagination"
-      className="flex flex-col items-center gap-3 pt-4 sm:flex-row sm:justify-between"
+      className="flex flex-row items-center justify-between gap-3 pt-4"
     >
       <p className="text-xs text-stone-500">
         Page <span className="font-semibold text-stone-700">{page}</span> of {pages}
-        <span className="hidden sm:inline"> · {total} records</span>
+        <span> · {total} records</span>
       </p>
 
       <div className="flex items-center gap-2">

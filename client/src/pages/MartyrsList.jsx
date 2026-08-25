@@ -62,7 +62,7 @@ export default function MartyrsList() {
   ];
 
   return (
-    <PageContainer className="space-y-6 sm:space-y-8">
+    <PageContainer className="space-y-8">
       <PageHeader
         title="Gallantry Award Recipients"
         subtitle="Directory of India's gallantry award recipients. Filter by state, branch, award, or status."
@@ -88,8 +88,8 @@ export default function MartyrsList() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <div className="relative sm:col-span-2 lg:col-span-1">
+        <div className="grid grid-cols-5 gap-3">
+          <div className="relative col-span-1">
             <Search
               className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-stone-400"
               aria-hidden="true"
@@ -146,7 +146,7 @@ export default function MartyrsList() {
         emptyHint={hasFilters ? "Try widening or clearing the filters above." : undefined}
       >
         <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-3 gap-4">
             {martyrs.map((martyr) => (
               <Link
                 key={recordId(martyr) ?? martyr.slug}
@@ -161,7 +161,7 @@ export default function MartyrsList() {
                     </div>
 
                     <div>
-                      <h3 className="font-display text-lg font-bold text-[#1A241A] transition-colors group-hover:text-[#D96B27] sm:text-xl">
+                      <h3 className="font-display text-xl font-bold text-[#1A241A] transition-colors group-hover:text-[#D96B27]">
                         {displayName(martyr)}
                       </h3>
                       <p className="text-xs font-medium text-stone-600">

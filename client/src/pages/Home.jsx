@@ -28,24 +28,24 @@ export default function Home() {
         {/* Soft bottom fade into page background */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-[#FAF7F2]" />
 
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 items-center gap-8 py-12 sm:py-16 lg:grid-cols-12 lg:gap-16 lg:py-20">
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-8">
+          <div className="grid grid-cols-12 items-center gap-16 py-20">
             {/* Logo / Visual */}
-            <div className="flex justify-center lg:col-span-5 lg:justify-start">
+            <div className="flex col-span-5 justify-start">
               <img
                 src="/1.png"
                 alt="Illustration of a war memorial and martyr’s portrait"
-                className="max-h-[220px] w-auto object-contain drop-shadow-lg sm:max-h-[280px] lg:max-h-[340px]"
+                className="max-h-[340px] w-auto object-contain drop-shadow-lg"
               />
             </div>
 
             {/* Content */}
-            <div className="space-y-6 lg:col-span-7">
+            <div className="space-y-6 col-span-7">
               <div>
                 <p className="text-xs font-semibold tracking-[0.2em] text-[#D96B27] uppercase mb-3">
                   Archive of Remembrance
                 </p>
-                <h1 className="font-display text-[2rem] sm:text-[2.6rem] lg:text-[3.15rem] font-extrabold text-[#1A241A] leading-[1.12] tracking-tight">
+                <h1 className="font-display text-[3.15rem] font-extrabold text-[#1A241A] leading-[1.12] tracking-tight">
                   <BlurText
                     text="They Gave Their Today, For Our Tomorrow."
                     delay={100}
@@ -99,7 +99,7 @@ export default function Home() {
 
       {/* ─── MISSION STATEMENT BLOCK – bilingual ─────────────── */}
       <section className="py-12 bg-[#FAF7F2] border-y border-stone-300/60 my-6">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-3">
+        <div className="max-w-4xl mx-auto px-8 text-center space-y-3">
           <p className="font-display text-lg text-[#1E431B] font-semibold leading-relaxed">
             “Veergatha exists to ensure that every name recorded in India’s gallantry awards and war memorials is accompanied by the verified history behind it — so that remembrance is rooted in truth.”
           </p>
@@ -113,12 +113,12 @@ export default function Home() {
       </section>
 
       {/* ─── MAIN CONTENT ─────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14 sm:space-y-20 mt-10">
+      <div className="max-w-7xl mx-auto px-8 space-y-20 mt-10">
         {/* Kargil Spotlight */}
         <section>
           <div className="flex items-end justify-between gap-4 mb-8 pb-4 border-b border-stone-300">
             <div>
-              <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#1E431B]">
+              <h2 className="font-display text-3xl font-bold text-[#1E431B]">
                 Kargil, 1999 — Operation Vijay
               </h2>
               <p className="text-sm text-stone-600 mt-1">
@@ -143,7 +143,7 @@ export default function Home() {
               No featured records available at this time. More names will be added as archives are verified.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-4 gap-5">
               {kargilMartyrs.map((martyr) => (
                 <Link
                   key={martyr.id || martyr.slug}
@@ -192,7 +192,7 @@ export default function Home() {
 
         {/* Navigation Cards */}
         <section>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-6">
             <Link to="/martyrs" className="group block">
               <SpotlightCard className="h-full p-6 space-y-4">
                 <Award className="w-7 h-7 text-[#D96B27]" strokeWidth={1.5} />

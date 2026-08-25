@@ -61,12 +61,22 @@ two of its four PVC recipients would be a worse historical record — but they c
 
 | Requirement | Target |
 |---|---|
-| Page load | Under 3s on a mid-range phone over 4G |
-| Layout | Mobile-first; usable from 360px up |
+| Page load | Under 3s over a typical broadband connection |
+| Layout | Desktop-only; minimum width 1080px. Narrower viewports scroll horizontally rather than reflowing — see note below |
 | Images | Cloudinary transforms, correct sizing, lazy loading below the fold |
 | Security | Input validation on every write; rate-limited admin login; secrets in env only |
 | Transport | HTTPS everywhere (Vercel and Render defaults) |
 | Availability | Public browsing never requires authentication |
+
+> **On the desktop-only decision.** The client was originally built mobile-first. In August
+> 2026 the header was locked to a fixed desktop layout, and the pages and UI primitives were
+> then aligned to match so the two could not disagree — a responsive body under a fixed header
+> tears the page at narrow widths. `PageContainer` and the header both carry
+> `min-w-[1080px]`, so the whole page scrolls sideways as one unit.
+>
+> This is a deliberate scope reduction, not an oversight. Restoring responsiveness means
+> reintroducing breakpoints in `client/src/components/ui/` first — those primitives carry the
+> layout for every page — and then reverting the header lock.
 
 ## Stack
 

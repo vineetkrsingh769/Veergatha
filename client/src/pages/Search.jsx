@@ -52,7 +52,7 @@ export default function SearchPage() {
   const counts = data?.counts ?? {};
 
   return (
-    <PageContainer width="medium" className="space-y-6 sm:space-y-8">
+    <PageContainer width="medium" className="space-y-8">
       <PageHeader
         title="Search Digital Archive"
         subtitle="Query across recipient records, war memorials, and conflicts."

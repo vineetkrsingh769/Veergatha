@@ -164,9 +164,9 @@ export default function AdminDashboard() {
 
   return (
     <PageContainer className="space-y-6">
-      <header className="flex flex-col gap-4 border-b border-stone-300 pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <header className="flex flex-row items-end justify-between gap-4 border-b border-stone-300 pb-5">
         <div className="space-y-1">
-          <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-[#1E431B] sm:text-3xl">
+          <h1 className="flex items-center gap-2 font-display text-3xl font-bold text-[#1E431B]">
             <Shield className="h-5 w-5 text-[#D96B27]" aria-hidden="true" />
             Editorial Control Panel
           </h1>
@@ -197,7 +197,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="flex flex-col gap-3 border-b border-stone-300 pb-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-row items-center justify-between gap-3 border-b border-stone-300 pb-3">
         <div className="flex gap-1 overflow-x-auto" role="tablist">
           {TABS.map(({ key, label, icon: Icon }) => (
             <button
@@ -359,7 +359,7 @@ function NewRecordModal({ onClose, onCreate }) {
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-2xl border border-stone-300 bg-[#FAF7F2] p-5 shadow-lg sm:p-6"
+        className="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-2xl border border-stone-300 bg-[#FAF7F2] p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-stone-300 pb-3">
@@ -392,7 +392,7 @@ function NewRecordModal({ onClose, onCreate }) {
             onChange={set("fullName")}
           />
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-3">
             <Field label="Rank" placeholder="e.g. Captain" value={form.rank} onChange={set("rank")} />
             <SelectField
               label="Service branch"
@@ -409,7 +409,7 @@ function NewRecordModal({ onClose, onCreate }) {
             onChange={set("regiment")}
           />
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-3">
             <SelectField
               label="Action status"
               options={STATUS_OPTIONS}

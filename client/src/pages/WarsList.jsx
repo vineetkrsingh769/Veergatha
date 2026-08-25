@@ -17,7 +17,7 @@ export default function WarsList() {
   const wars = data?.wars ?? [];
 
   return (
-    <PageContainer className="space-y-6 sm:space-y-8">
+    <PageContainer className="space-y-8">
       <PageHeader
         title="Conflicts &amp; Operations"
         subtitle="Timeline of post-independence wars, operations, and peacekeeping missions."
