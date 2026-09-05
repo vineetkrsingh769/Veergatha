@@ -11,6 +11,7 @@ const MemorialDetail = lazy(() => import("./pages/MemorialDetail.jsx"));
 const WarsList = lazy(() => import("./pages/WarsList.jsx"));
 const WarDetail = lazy(() => import("./pages/WarDetail.jsx"));
 const Search = lazy(() => import("./pages/Search.jsx"));
+const Gallery = lazy(() => import("./pages/Gallery.jsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.jsx"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard.jsx"));
 
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="wars" element={<WarsList />} />
           <Route path="wars/:slug" element={<WarDetail />} />
           <Route path="search" element={<Search />} />
+          <Route path="gallery" element={<Gallery />} />
           <Route path="admin/login" element={<AdminLogin />} />
           <Route path="admin/dashboard" element={<AdminDashboard />} />
           <Route

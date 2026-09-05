@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: "/martyrs", label: "Gallantry Awards" },
   { to: "/memorials", label: "War Memorials" },
   { to: "/wars", label: "Operations" },
+  { to: "/gallery", label: "Gallery" },
 ];
 
 /**

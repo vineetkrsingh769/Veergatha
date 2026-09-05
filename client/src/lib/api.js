@@ -50,3 +50,24 @@ export const fetchAdminWars = () => api.get("/admin/wars").then((r) => r.data);
 export const createAdminWar = (data) => api.post("/admin/wars", data).then((r) => r.data);
 export const updateAdminWar = (id, data) => api.put(`/admin/wars/${id}`, data).then((r) => r.data);
 export const deleteAdminWar = (id) => api.delete(`/admin/wars/${id}`).then((r) => r.data);
+
+// --- Media ---
+export const fetchMedia = (params) => api.get("/media", { params }).then((r) => r.data);
+export const fetchAdminMedia = (params) => api.get("/admin/media", { params }).then((r) => r.data);
+export const deleteAdminMedia = (id) => api.delete(`/admin/media/${id}`).then((r) => r.data);
+export const updateAdminMedia = (id, data) => api.put(`/admin/media/${id}`, data).then((r) => r.data);
+
+/**
+ * Upload takes multipart, so Content-Type must be unset here rather than
+ * inherited from the instance default of application/json. The browser then
+ * writes it itself, including the multipart boundary — which is generated per
+ * request and cannot be hardcoded.
+ */
+export const uploadAdminMedia = (formData, onProgress) =>
+  api
+    .post("/admin/media", formData, {
+      headers: { "Content-Type": undefined },
+      onUploadProgress: (e) =>
+        onProgress?.(e.total ? Math.round((e.loaded * 100) / e.total) : 0),
+    })
+    .then((r) => r.data);

@@ -5,6 +5,7 @@ import {
   Award,
   Landmark,
   Swords,
+  Images,
   LogOut,
   CheckCircle2,
   Plus,
@@ -21,6 +22,9 @@ import {
   createAdminMartyr,
   updateAdminMartyr,
   deleteAdminMartyr,
+  fetchAdminMedia,
+  deleteAdminMedia,
+  updateAdminMedia,
 } from "../lib/api";
 import { clearSession, isAuthenticated } from "../lib/auth";
 import { getErrorMessage } from "../hooks/useApi";
@@ -33,11 +37,13 @@ import {
   VerificationBadge,
 } from "../components/ui";
 import { Button, Field, SelectField } from "../components/ui/Field.jsx";
+import MediaUpload from "../components/admin/MediaUpload.jsx";
 
 const TABS = [
   { key: "martyrs", label: "Recipients", icon: Award },
   { key: "memorials", label: "Memorials", icon: Landmark },
   { key: "wars", label: "Conflicts", icon: Swords },
+  { key: "media", label: "Media", icon: Images },
 ];
 
 const BLANK_RECORD = {
@@ -58,9 +64,10 @@ export default function AdminDashboard() {
 
   const [tab, setTab] = useState("martyrs");
   const [statusFilter, setStatusFilter] = useState("");
-  const [records, setRecords] = useState({ martyrs: [], memorials: [], wars: [] });
+  const [records, setRecords] = useState({ martyrs: [], memorials: [], wars: [], media: [] });
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
 
   const signOut = useCallback(() => {
     clearSession();
@@ -97,15 +104,17 @@ export default function AdminDashboard() {
     setError("");
 
     try {
-      const [martyrRes, memorialRes, warRes] = await Promise.all([
+      const [martyrRes, memorialRes, warRes, mediaRes] = await Promise.all([
         fetchAdminMartyrs(params),
         fetchAdminMemorials(params),
         fetchAdminWars(),
+        fetchAdminMedia(params),
       ]);
       setRecords({
         martyrs: martyrRes.martyrs ?? [],
         memorials: memorialRes.memorials ?? [],
         wars: warRes.wars ?? [],
+        media: mediaRes.media ?? [],
       });
     } catch (err) {
       setError(getErrorMessage(err, "Could not load records"));
@@ -140,6 +149,32 @@ export default function AdminDashboard() {
     }
   }
 
+  async function toggleMediaVerification(item) {
+    const current = item.verification?.status ?? "draft";
+    const next = current === "verified" ? "draft" : "verified";
+
+    try {
+      await updateAdminMedia(recordId(item), { verification: { status: next } });
+      await loadRecords();
+    } catch (err) {
+      // The model refuses to verify media whose licence is still unverified,
+      // so surface that reason rather than a generic failure.
+      setError(getErrorMessage(err, "Could not change media status"));
+    }
+  }
+
+  async function removeMedia(item) {
+    if (!window.confirm(`Delete “${item.title || "this image"}”? It is removed from Cloudinary too.`))
+      return;
+
+    try {
+      await deleteAdminMedia(recordId(item));
+      await loadRecords();
+    } catch (err) {
+      setError(getErrorMessage(err, "Delete failed"));
+    }
+  }
+
   async function createRecord(form) {
     await createAdminMartyr({
       slug: form.slug.toLowerCase().trim(),
@@ -160,6 +195,7 @@ export default function AdminDashboard() {
     martyrs: records.martyrs.length,
     memorials: records.memorials.length,
     wars: records.wars.length,
+    media: records.media.length,
   };
 
   return (
@@ -176,9 +212,9 @@ export default function AdminDashboard() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button onClick={() => setShowModal(true)}>
+          <Button onClick={() => (tab === "media" ? setShowUpload(true) : setShowModal(true))}>
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Add Record
+            {tab === "media" ? "Upload Media" : "Add Record"}
           </Button>
           <Button variant="secondary" onClick={signOut}>
             <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
@@ -302,6 +338,48 @@ export default function AdminDashboard() {
             </tr>
           )}
         />
+      )}
+
+      {tab === "media" && (
+        <RecordTable
+          columns={["", "Title", "Licence", "Credit", "Verification", ""]}
+          rows={records.media}
+          empty="No media uploaded yet."
+          renderRow={(item) => (
+            <tr key={recordId(item)} className="hover:bg-stone-50">
+              <td className="p-2">
+                <img
+                  src={item.cloudinary?.secureUrl}
+                  alt=""
+                  width={48}
+                  height={48}
+                  className="h-12 w-12 rounded border border-stone-300 object-cover"
+                />
+              </td>
+              <td className="p-3 font-semibold text-[#1A241A]">{item.title || "Untitled"}</td>
+              <td className="p-3 text-stone-700">{item.license}</td>
+              <td className="p-3 text-stone-600">{item.credit || "—"}</td>
+              <td className="p-3">
+                <button onClick={() => toggleMediaVerification(item)} title="Toggle verification">
+                  <VerificationBadge status={item.verification?.status} />
+                </button>
+              </td>
+              <td className="p-3 text-right">
+                <button
+                  onClick={() => removeMedia(item)}
+                  title="Delete media"
+                  className="p-1.5 text-stone-400 transition-colors hover:text-rose-600"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </td>
+            </tr>
+          )}
+        />
+      )}
+
+      {showUpload && (
+        <MediaUpload onClose={() => setShowUpload(false)} onUploaded={loadRecords} />
       )}
 
       {showModal && <NewRecordModal onClose={() => setShowModal(false)} onCreate={createRecord} />}
