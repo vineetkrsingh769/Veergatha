@@ -107,3 +107,37 @@ export async function seedAdmin(req, res) {
     refreshToken,
   });
 }
+
+/**
+ * Change the signed-in user's own password.
+ *
+ * The current password is required even though the caller already holds a valid
+ * token: a stolen or borrowed session should not be enough to lock the real
+ * owner out of their account.
+ *
+ * Saving bumps tokenVersion, which invalidates every outstanding refresh token
+ * — including the caller's. A fresh pair is returned so the person doing the
+ * change is not signed out by their own action, while every other session dies.
+ */
+export async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.user._id).select("+passwordHash +tokenVersion");
+  if (!user) throw new ApiError(401, "User no longer exists");
+
+  const valid = await user.verifyPassword(currentPassword);
+  if (!valid) throw new ApiError(401, "Current password is incorrect");
+
+  if (currentPassword === newPassword) {
+    throw new ApiError(400, "New password must be different from the current one");
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res.json({
+    message: "Password changed. Other sessions have been signed out.",
+    accessToken: signAccessToken(user),
+    refreshToken: signRefreshToken(user),
+  });
+}

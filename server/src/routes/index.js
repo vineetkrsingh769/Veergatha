@@ -26,7 +26,13 @@ import {
   updateMedia,
   deleteMedia,
 } from "../controllers/media.controller.js";
-import { login, refresh, getMe, seedAdmin } from "../controllers/auth.controller.js";
+import {
+  login,
+  refresh,
+  getMe,
+  seedAdmin,
+  changePassword,
+} from "../controllers/auth.controller.js";
 
 import {
   listMartyrsAdmin,
@@ -53,6 +59,7 @@ import {
   loginSchema,
   refreshSchema,
   seedAdminSchema,
+  changePasswordSchema,
 } from "../schemas/index.js";
 
 export const api = Router();
@@ -82,6 +89,15 @@ api.post("/auth/login", loginLimiter, validateBody(loginSchema), a(login));
 api.post("/auth/refresh", refreshLimiter, validateBody(refreshSchema), a(refresh));
 api.post("/auth/seed-admin", seedLimiter, validateBody(seedAdminSchema), a(seedAdmin));
 api.get("/auth/me", a(requireAuth), a(getMe));
+// Shares the login limiter: guessing the current password here is the same
+// attack as guessing it at the sign-in form.
+api.post(
+  "/auth/change-password",
+  loginLimiter,
+  a(requireAuth),
+  validateBody(changePasswordSchema),
+  a(changePassword)
+);
 
 // --- ADMIN ROUTES (requireAuth + requireAdmin) ---
 const admin = Router();

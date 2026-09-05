@@ -152,3 +152,8 @@ export const seedAdminSchema = z.object({
   name: nonEmpty("name"),
   password: z.string().min(12, "password must be at least 12 characters"),
 });
+
+export const changePasswordSchema = z.object({
+  currentPassword: nonEmpty("currentPassword"),
+  newPassword: z.string().min(12, "new password must be at least 12 characters"),
+});

@@ -6,6 +6,7 @@ import {
   Landmark,
   Swords,
   Images,
+  KeyRound,
   LogOut,
   CheckCircle2,
   Plus,
@@ -38,6 +39,7 @@ import {
 } from "../components/ui";
 import { Button, Field, SelectField } from "../components/ui/Field.jsx";
 import MediaUpload from "../components/admin/MediaUpload.jsx";
+import ChangePassword from "../components/admin/ChangePassword.jsx";
 
 const TABS = [
   { key: "martyrs", label: "Recipients", icon: Award },
@@ -68,6 +70,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const signOut = useCallback(() => {
     clearSession();
@@ -215,6 +218,10 @@ export default function AdminDashboard() {
           <Button onClick={() => (tab === "media" ? setShowUpload(true) : setShowModal(true))}>
             <Plus className="h-4 w-4" aria-hidden="true" />
             {tab === "media" ? "Upload Media" : "Add Record"}
+          </Button>
+          <Button variant="secondary" onClick={() => setShowPassword(true)}>
+            <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
+            Password
           </Button>
           <Button variant="secondary" onClick={signOut}>
             <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
@@ -377,6 +384,8 @@ export default function AdminDashboard() {
           )}
         />
       )}
+
+      {showPassword && <ChangePassword onClose={() => setShowPassword(false)} />}
 
       {showUpload && (
         <MediaUpload onClose={() => setShowUpload(false)} onUploaded={loadRecords} />

@@ -71,3 +71,6 @@ export const uploadAdminMedia = (formData, onProgress) =>
         onProgress?.(e.total ? Math.round((e.loaded * 100) / e.total) : 0),
     })
     .then((r) => r.data);
+
+export const changePassword = (data) =>
+  api.post("/auth/change-password", data).then((r) => r.data);
