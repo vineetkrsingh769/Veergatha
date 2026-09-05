@@ -2,6 +2,7 @@ import { Router } from "express";
 import { asyncHandler as a } from "../middleware/asyncHandler.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { validateBody } from "../middleware/validate.js";
+import { handleUpload } from "../middleware/upload.js";
 import {
   loginLimiter,
   refreshLimiter,
@@ -18,6 +19,13 @@ import {
 import { listWars, getWar } from "../controllers/wars.controller.js";
 import { search } from "../controllers/search.controller.js";
 import { getFilters, getStats } from "../controllers/meta.controller.js";
+import {
+  listMedia,
+  listMediaAdmin,
+  uploadMedia,
+  updateMedia,
+  deleteMedia,
+} from "../controllers/media.controller.js";
 import { login, refresh, getMe, seedAdmin } from "../controllers/auth.controller.js";
 
 import {
@@ -63,6 +71,8 @@ api.get("/memorials/:slug", a(getMemorial));
 api.get("/wars", a(listWars));
 api.get("/wars/:slug", a(getWar));
 
+api.get("/media", a(listMedia));
+
 api.get("/search", a(search));
 api.get("/filters", a(getFilters));
 api.get("/stats", a(getStats));
@@ -86,6 +96,13 @@ admin.get("/memorials", a(listMemorialsAdmin));
 admin.post("/memorials", validateBody(memorialCreateSchema), a(createMemorial));
 admin.put("/memorials/:id", validateBody(memorialUpdateSchema), a(updateMemorial));
 admin.delete("/memorials/:id", a(deleteMemorial));
+
+// Upload is multipart, so the body is parsed by multer rather than validateBody;
+// the controller enforces the licence and credit rules before anything is stored.
+admin.get("/media", a(listMediaAdmin));
+admin.post("/media", handleUpload, a(uploadMedia));
+admin.put("/media/:id", a(updateMedia));
+admin.delete("/media/:id", a(deleteMedia));
 
 admin.get("/wars", a(listWarsAdmin));
 admin.post("/wars", validateBody(warCreateSchema), a(createWar));
