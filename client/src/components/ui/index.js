@@ -6,6 +6,7 @@ export { CitationBlock } from "./Citation.jsx";
 export { ProvenanceFooter } from "./Provenance.jsx";
 export { RelatedEntries } from "./Related.jsx";
 export { ResultRow, ResultList } from "./ResultRow.jsx";
+export { FilterRail, ActiveFilterChips } from "./FilterRail.jsx";
 export { RecordCard, CardGrid, TypePill } from "./RecordCard.jsx";
 export {
   BackLink,

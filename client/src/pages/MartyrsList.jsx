@@ -1,20 +1,22 @@
-import { useCallback, useMemo, useState } from "react";
-import { Search, Filter } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Search } from "lucide-react";
 
 import { fetchMartyrs, fetchFilters } from "../lib/api";
 import { useApi } from "../hooks/useApi";
-import { PAGE_SIZE, STATUS_OPTIONS } from "../lib/constants";
+import { useDebounced } from "../hooks/useDebounced";
+import { PAGE_SIZE, STATUS_LABELS, STATUS_OPTIONS } from "../lib/constants";
 import { recordId } from "../lib/format";
 import {
+  ActiveFilterChips,
   AsyncBoundary,
+  FilterRail,
   PageContainer,
   PageHeader,
   Pagination,
   ResultList,
   ResultRow,
 } from "../components/ui";
-
-const EMPTY_FILTERS = { q: "", state: "", branch: "", award: "", status: "" };
 
 /**
  * Values match the API's `sort` parameter. Ordering is applied server-side
@@ -27,187 +29,319 @@ const SORT_OPTIONS = [
   { value: "date", label: "Date of action (most recent)" },
 ];
 
-const CONTROL =
-  "w-full rounded-lg border border-rule-strong bg-sunken px-3 py-2 text-label text-ink-700 focus:border-accent focus:outline-none";
+/**
+ * Every filter that lives in the URL. Each name is also the API parameter, so
+ * a link built elsewhere in the app lands here already filtered.
+ *
+ * `regiment` is in this list because the related-entries section on a recipient
+ * profile links to /martyrs?regiment=… — a key missing here would leave that
+ * link silently landing on an unfiltered list.
+ */
+const FILTER_KEYS = ["q", "war", "award", "regiment", "branch", "state", "status", "year"];
+
+const EMPTY_OPTIONS = {
+  states: [],
+  regiments: [],
+  branches: [],
+  awards: [],
+  wars: [],
+  years: [],
+  counts: {},
+};
 
 export default function MartyrsList() {
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [page, setPage] = useState(1);
-  const [sort, setSort] = useState("name");
+  /*
+   * Filter state lives in the URL, not in component state.
+   *
+   * This is an archive people cite: a filtered view has to survive a refresh,
+   * be sendable to someone else, and be reachable by the back button. It also
+   * makes the "see all" links on recipient profiles work, since those arrive
+   * here carrying query parameters.
+   */
+  const [params, setParams] = useSearchParams();
 
-  // Any filter change resets to page 1 — paging into a shorter result set
-  // otherwise lands the user on an empty page.
-  const updateFilter = useCallback((key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    setPage(1);
-  }, []);
+  const filters = useMemo(
+    () => Object.fromEntries(FILTER_KEYS.map((k) => [k, params.get(k) ?? ""])),
+    [params]
+  );
+  const sort = params.get("sort") ?? "name";
+  const page = Math.max(1, Number(params.get("page")) || 1);
 
-  const options = useApi(fetchFilters, [], {
-    initialData: { states: [], branches: [], awards: [] },
-  });
+  /*
+   * The search box stays local and instant; the URL trails behind it. Writing
+   * every keystroke straight to the URL would fire a request per character and
+   * bury the back button under a history entry per character.
+   */
+  const [queryInput, setQueryInput] = useState(filters.q);
+  const debouncedQuery = useDebounced(queryInput, 350);
 
-  // Serialised so the effect compares by value, not by object identity.
-  const queryKey = JSON.stringify({ ...filters, page, sort });
+  const write = useCallback(
+    (mutate, { replace = false } = {}) => {
+      setParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          mutate(next);
+          // Any change to the result set returns to page 1; paging into a
+          // shorter set otherwise lands on an empty page.
+          next.delete("page");
+          return next;
+        },
+        { replace }
+      );
+    },
+    [setParams]
+  );
 
-  const params = useMemo(() => {
+  useEffect(() => {
+    if (debouncedQuery === filters.q) return;
+    write(
+      (next) => (debouncedQuery ? next.set("q", debouncedQuery) : next.delete("q")),
+      // Replace, so typing leaves one history entry rather than one per word.
+      { replace: true }
+    );
+  }, [debouncedQuery, filters.q, write]);
+
+  const setFilter = useCallback(
+    (key, value) => write((next) => (value ? next.set(key, value) : next.delete(key))),
+    [write]
+  );
+
+  const resetAll = useCallback(() => {
+    setQueryInput("");
+    // Sort is a view preference, not a filter, so it survives a reset.
+    setParams((prev) => {
+      const next = new URLSearchParams();
+      const keep = prev.get("sort");
+      if (keep) next.set("sort", keep);
+      return next;
+    });
+  }, [setParams]);
+
+  const options = useApi(fetchFilters, [], { initialData: EMPTY_OPTIONS });
+  const opts = options.data ?? EMPTY_OPTIONS;
+  const counts = opts.counts ?? {};
+
+  const queryParams = useMemo(() => {
     const next = { page, limit: PAGE_SIZE, sort };
-    if (filters.q.trim()) next.q = filters.q.trim();
-    if (filters.state) next.state = filters.state;
-    if (filters.branch) next.branch = filters.branch;
-    if (filters.award) next.award = filters.award;
-    if (filters.status) next.status = filters.status;
+    for (const key of FILTER_KEYS) {
+      if (filters[key]) next[key] = filters[key];
+    }
     return next;
   }, [filters, page, sort]);
 
-  const { data, loading, error, refetch } = useApi(() => fetchMartyrs(params), [queryKey]);
+  // Serialised so the effect compares by value, not by object identity.
+  const queryKey = JSON.stringify(queryParams);
+  const { data, loading, error, refetch } = useApi(() => fetchMartyrs(queryParams), [queryKey]);
 
   const martyrs = data?.martyrs ?? [];
   const meta = data?.meta ?? null;
-  const hasFilters = Object.values(filters).some(Boolean);
 
-  // Which slice of the whole result set is on screen.
   const rangeFrom = meta ? (meta.page - 1) * meta.limit + 1 : 0;
   const rangeTo = meta ? Math.min(meta.page * meta.limit, meta.total) : 0;
 
-  const selects = [
-    { key: "state", label: "All States", items: options.data?.states ?? [] },
-    { key: "branch", label: "All Branches", items: options.data?.branches ?? [] },
-    { key: "award", label: "All Awards", items: options.data?.awards ?? [] },
-  ];
+  /*
+   * Award options are rendered in the order the API sends them, which is
+   * AWARD_NAMES precedence order — Param Vir Chakra first, never alphabetical.
+   * The client deliberately does not re-sort: the sequence has one home, in the
+   * schema enum the server reads.
+   */
+  const groups = useMemo(
+    () => [
+      {
+        key: "war",
+        label: "Conflict",
+        options: (opts.wars ?? []).map((w) => ({
+          value: w.slug,
+          label: w.name,
+          count: counts.wars?.[w.slug],
+        })),
+      },
+      {
+        key: "award",
+        label: "Award",
+        options: (opts.awards ?? []).map((a) => ({
+          value: a,
+          label: a,
+          count: counts.awards?.[a],
+        })),
+      },
+      {
+        key: "regiment",
+        label: "Regiment",
+        options: (opts.regiments ?? []).map((r) => ({
+          value: r,
+          label: r,
+          count: counts.regiments?.[r],
+        })),
+      },
+      {
+        key: "branch",
+        label: "Service branch",
+        options: (opts.branches ?? []).map((b) => ({
+          value: b,
+          label: b,
+          count: counts.branches?.[b],
+        })),
+      },
+      {
+        key: "status",
+        label: "Outcome",
+        options: STATUS_OPTIONS.map((s) => ({
+          value: s.value,
+          label: s.label,
+          count: counts.statuses?.[s.value],
+        })),
+      },
+      {
+        key: "year",
+        label: "Year fell",
+        // The server's year filter is a range on dateOfMartyrdom, so it can
+        // only ever return recipients who fell. Saying so is better than
+        // letting someone conclude the survivors are missing.
+        hint: "Recipients who survived have no recorded date and are not returned by this filter.",
+        options: (opts.years ?? []).map((y) => ({
+          value: String(y),
+          label: String(y),
+          count: counts.years?.[String(y)],
+        })),
+      },
+      {
+        key: "state",
+        label: "Home state",
+        options: (opts.states ?? []).map((s) => ({
+          value: s,
+          label: s,
+          count: counts.states?.[s],
+        })),
+      },
+    ],
+    [opts, counts]
+  );
+
+  const chips = useMemo(() => {
+    const labelFor = (key, value) => {
+      if (key === "q") return `“${value}”`;
+      if (key === "status") return STATUS_LABELS[value] ?? value;
+      if (key === "war") return opts.wars?.find((w) => w.slug === value)?.name ?? value;
+      return value;
+    };
+    const groupLabel = (key) =>
+      key === "q" ? "Search" : groups.find((g) => g.key === key)?.label ?? key;
+
+    return FILTER_KEYS.filter((k) => filters[k]).map((k) => ({
+      key: k,
+      value: filters[k],
+      label: labelFor(k, filters[k]),
+      groupLabel: groupLabel(k),
+    }));
+  }, [filters, groups, opts.wars]);
+
+  const removeChip = useCallback(
+    (key) => {
+      if (key === "q") setQueryInput("");
+      setFilter(key, "");
+    },
+    [setFilter]
+  );
 
   return (
-    <PageContainer className="space-y-8">
+    <PageContainer className="space-y-6">
       <PageHeader
         title="Gallantry Award Recipients"
-        subtitle="Directory of India's gallantry award recipients. Filter by state, branch, award, or status."
+        subtitle="Every recipient documented in the archive, with the sources behind each record."
       />
 
-      <div className="space-y-4 rounded-xl border border-rule-strong bg-raised p-4 shadow-xs">
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2 text-label font-bold uppercase tracking-wider text-accent-deep">
-            <Filter className="h-4 w-4" aria-hidden="true" />
-            Filters &amp; Search
-          </span>
-          {hasFilters && (
-            <button
-              type="button"
-              onClick={() => {
-                setFilters(EMPTY_FILTERS);
-                setPage(1);
-              }}
-              className="text-label font-medium text-muted underline underline-offset-2 hover:text-accent-deep"
+      <div className="flex items-start gap-8">
+        <FilterRail groups={groups} values={filters} onChange={setFilter}>
+          <div>
+            <label
+              htmlFor="recipient-search"
+              className="text-caption font-bold uppercase tracking-[0.15em] text-ink-700"
             >
-              Clear all
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-5 gap-3">
-          <div className="relative col-span-1">
-            <Search
-              className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-faint"
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              placeholder="Search by name, regiment…"
-              aria-label="Search recipients"
-              value={filters.q}
-              onChange={(e) => updateFilter("q", e.target.value)}
-              className={`${CONTROL} pl-9`}
-            />
+              Search
+            </label>
+            <div className="relative mt-2">
+              <Search
+                className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-faint"
+                aria-hidden="true"
+              />
+              <input
+                id="recipient-search"
+                type="search"
+                placeholder="Name, regiment…"
+                value={queryInput}
+                onChange={(e) => setQueryInput(e.target.value)}
+                className="w-full rounded-control border border-rule-strong bg-raised py-2 pl-9 pr-3 text-body text-ink-700 placeholder-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-deep"
+              />
+            </div>
           </div>
+        </FilterRail>
 
-          {selects.map(({ key, label, items }) => (
-            <select
-              key={key}
-              aria-label={label}
-              value={filters[key]}
-              onChange={(e) => updateFilter(key, e.target.value)}
-              className={CONTROL}
-            >
-              <option value="">{label}</option>
-              {items.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          ))}
+        <div className="min-w-0 flex-1 space-y-4">
+          <ActiveFilterChips chips={chips} onRemove={removeChip} onReset={resetAll} />
 
-          <select
-            aria-label="All Statuses"
-            value={filters.status}
-            onChange={(e) => updateFilter("status", e.target.value)}
-            className={CONTROL}
+          <AsyncBoundary
+            loading={loading}
+            error={error}
+            onRetry={refetch}
+            isEmpty={martyrs.length === 0}
+            emptyTitle="No records match these filters"
+            emptyHint={chips.length ? "Try removing a filter above." : undefined}
           >
-            <option value="">All Statuses</option>
-            {STATUS_OPTIONS.map(({ value, label }) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <p className="text-body text-muted" aria-live="polite">
+                  {meta ? (
+                    <>
+                      Showing{" "}
+                      <span className="font-semibold text-ink">
+                        {rangeFrom}–{rangeTo}
+                      </span>{" "}
+                      of <span className="font-semibold text-ink">{meta.total}</span>{" "}
+                      {meta.total === 1 ? "recipient" : "recipients"}
+                    </>
+                  ) : null}
+                </p>
+
+                <label className="flex items-center gap-2 text-body text-muted">
+                  Sort by
+                  <select
+                    value={sort}
+                    onChange={(e) => write((next) => next.set("sort", e.target.value))}
+                    className="rounded-control border border-rule-strong bg-raised px-2.5 py-1.5 text-body text-ink-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-deep"
+                  >
+                    {SORT_OPTIONS.map(({ value, label }) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <ResultList>
+                {martyrs.map((martyr) => (
+                  <li key={recordId(martyr) ?? martyr.slug}>
+                    <ResultRow martyr={martyr} />
+                  </li>
+                ))}
+              </ResultList>
+
+              <Pagination
+                meta={meta}
+                onChange={(next) =>
+                  setParams((prev) => {
+                    const p = new URLSearchParams(prev);
+                    if (next > 1) p.set("page", String(next));
+                    else p.delete("page");
+                    return p;
+                  })
+                }
+              />
+            </div>
+          </AsyncBoundary>
         </div>
       </div>
-
-      <AsyncBoundary
-        loading={loading}
-        error={error}
-        onRetry={refetch}
-        isEmpty={martyrs.length === 0}
-        emptyTitle="No records match your filters"
-        emptyHint={hasFilters ? "Try widening or clearing the filters above." : undefined}
-      >
-        <div className="space-y-4">
-          {/* Count and ordering. Both describe the whole result set, not the
-              page, which is why the sort is applied by the API. */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="text-body text-muted" aria-live="polite">
-              {meta ? (
-                <>
-                  Showing{" "}
-                  <span className="font-semibold text-ink">
-                    {rangeFrom}–{rangeTo}
-                  </span>{" "}
-                  of <span className="font-semibold text-ink">{meta.total}</span>{" "}
-                  {meta.total === 1 ? "recipient" : "recipients"}
-                </>
-              ) : null}
-            </p>
-
-            <label className="flex items-center gap-2 text-body text-muted">
-              Sort by
-              <select
-                value={sort}
-                onChange={(e) => {
-                  setSort(e.target.value);
-                  // Reordering while on page 3 would leave the reader somewhere
-                  // arbitrary in the new sequence.
-                  setPage(1);
-                }}
-                className="rounded-control border border-rule-strong bg-raised px-2.5 py-1.5 text-body text-ink-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-deep"
-              >
-                {SORT_OPTIONS.map(({ value, label }) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <ResultList>
-            {martyrs.map((martyr) => (
-              <li key={recordId(martyr) ?? martyr.slug}>
-                <ResultRow martyr={martyr} />
-              </li>
-            ))}
-          </ResultList>
-
-          <Pagination meta={meta} onChange={setPage} />
-        </div>
-      </AsyncBoundary>
     </PageContainer>
   );
 }
