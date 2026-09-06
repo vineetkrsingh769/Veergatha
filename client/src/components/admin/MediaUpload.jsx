@@ -91,16 +91,16 @@ export default function MediaUpload({ onClose, onUploaded }) {
       role="dialog"
       aria-modal="true"
       aria-label="Upload media"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
       onClick={close}
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl border border-stone-300 bg-[#FAF7F2] p-6 shadow-lg"
+        className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl border border-rule-strong bg-surface p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-stone-300 pb-3">
-          <h2 className="font-display text-lg font-bold text-[#1E431B]">Upload media</h2>
-          <button onClick={close} aria-label="Close" className="text-stone-400 hover:text-stone-700">
+        <div className="flex items-center justify-between border-b border-rule-strong pb-3">
+          <h2 className="font-display text-title font-bold text-tiranga-700">Upload media</h2>
+          <button onClick={close} aria-label="Close" className="text-faint hover:text-ink-700">
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
@@ -108,7 +108,7 @@ export default function MediaUpload({ onClose, onUploaded }) {
         {error && (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"
+            className="flex items-start gap-2 rounded-lg border border-danger-rule bg-danger-bg p-3 text-label text-danger"
           >
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{error}</span>
@@ -119,7 +119,7 @@ export default function MediaUpload({ onClose, onUploaded }) {
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-stone-300 bg-white/60 p-5 transition-colors hover:border-[#D96B27]"
+            className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-rule-strong bg-raised p-5 transition-colors hover:border-accent"
           >
             {preview ? (
               <img
@@ -128,9 +128,9 @@ export default function MediaUpload({ onClose, onUploaded }) {
                 className="max-h-40 w-auto rounded-lg object-contain"
               />
             ) : (
-              <UploadCloud className="h-7 w-7 text-stone-400" aria-hidden="true" />
+              <UploadCloud className="h-7 w-7 text-faint" aria-hidden="true" />
             )}
-            <span className="text-xs font-medium text-stone-600">
+            <span className="text-label font-medium text-muted">
               {file ? file.name : "Choose an image — JPEG, PNG, WebP or AVIF, up to 8 MB"}
             </span>
           </button>
@@ -187,13 +187,13 @@ export default function MediaUpload({ onClose, onUploaded }) {
 
           {busy && (
             <div className="space-y-1">
-              <div className="h-1.5 overflow-hidden rounded-full bg-stone-200">
+              <div className="h-1.5 overflow-hidden rounded-full bg-rule">
                 <div
-                  className="h-full rounded-full bg-[#D96B27] transition-all"
+                  className="h-full rounded-full bg-accent transition-all"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="text-[11px] text-stone-500">Uploading… {progress}%</p>
+              <p className="text-caption text-muted">Uploading… {progress}%</p>
             </div>
           )}
 
@@ -201,7 +201,7 @@ export default function MediaUpload({ onClose, onUploaded }) {
             {busy ? "Uploading…" : "Upload"}
           </Button>
 
-          <p className="text-[11px] leading-relaxed text-stone-500">
+          <p className="text-caption leading-relaxed text-muted">
             Uploads are saved as <strong>draft</strong>. They stay out of the public gallery until
             an editor marks them verified.
           </p>

@@ -43,22 +43,22 @@ export default function AdminLogin() {
           height={56}
           className="mx-auto h-14 w-14"
         />
-        <h1 className="font-display text-3xl font-bold text-[#1E431B]">
+        <h1 className="font-display text-heading font-bold text-tiranga-700">
           Editorial Authentication
         </h1>
-        <p className="text-xs text-stone-600">
+        <p className="text-label text-muted">
           Gated access for archive editors and administrators.
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 rounded-2xl border border-stone-300 bg-white/85 p-6 shadow-xs"
+        className="space-y-4 rounded-2xl border border-rule-strong bg-raised p-6 shadow-xs"
       >
         {error && (
           <div
             role="alert"
-            className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"
+            className="flex items-center gap-2 rounded-lg border border-danger-rule bg-danger-bg p-3 text-label text-danger"
           >
             <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{error}</span>

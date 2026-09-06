@@ -61,7 +61,7 @@ export default function MemorialDetail() {
       <Section
         title={
           <span className="flex items-center gap-2">
-            <Award className="h-5 w-5 text-[#D96B27]" aria-hidden="true" />
+            <Award className="h-5 w-5 text-accent-deep" aria-hidden="true" />
             Honoured Personnel ({honoured.length})
           </span>
         }

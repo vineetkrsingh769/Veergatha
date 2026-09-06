@@ -1,29 +1,39 @@
 import { useCallback, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Search, Filter, ChevronRight } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 
 import { fetchMartyrs, fetchFilters } from "../lib/api";
 import { useApi } from "../hooks/useApi";
 import { PAGE_SIZE, STATUS_OPTIONS } from "../lib/constants";
-import { displayName, primaryAward, recordId } from "../lib/format";
-import SpotlightCard from "../components/reactbits/SpotlightCard";
+import { recordId } from "../lib/format";
 import {
   AsyncBoundary,
-  AwardBadge,
   PageContainer,
   PageHeader,
   Pagination,
-  StatusBadge,
+  ResultList,
+  ResultRow,
 } from "../components/ui";
 
 const EMPTY_FILTERS = { q: "", state: "", branch: "", award: "", status: "" };
 
+/**
+ * Values match the API's `sort` parameter. Ordering is applied server-side
+ * because the client only ever holds one page — sorting here would reorder
+ * twelve records while appearing to have ordered the whole result set.
+ */
+const SORT_OPTIONS = [
+  { value: "name", label: "Name (A–Z)" },
+  { value: "award", label: "Award precedence" },
+  { value: "date", label: "Date of action (most recent)" },
+];
+
 const CONTROL =
-  "w-full rounded-lg border border-stone-300 bg-stone-50 px-3 py-2 text-xs text-stone-800 focus:border-[#D96B27] focus:outline-none";
+  "w-full rounded-lg border border-rule-strong bg-sunken px-3 py-2 text-label text-ink-700 focus:border-accent focus:outline-none";
 
 export default function MartyrsList() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState("name");
 
   // Any filter change resets to page 1 — paging into a shorter result set
   // otherwise lands the user on an empty page.
@@ -37,23 +47,27 @@ export default function MartyrsList() {
   });
 
   // Serialised so the effect compares by value, not by object identity.
-  const queryKey = JSON.stringify({ ...filters, page });
+  const queryKey = JSON.stringify({ ...filters, page, sort });
 
   const params = useMemo(() => {
-    const next = { page, limit: PAGE_SIZE };
+    const next = { page, limit: PAGE_SIZE, sort };
     if (filters.q.trim()) next.q = filters.q.trim();
     if (filters.state) next.state = filters.state;
     if (filters.branch) next.branch = filters.branch;
     if (filters.award) next.award = filters.award;
     if (filters.status) next.status = filters.status;
     return next;
-  }, [filters, page]);
+  }, [filters, page, sort]);
 
   const { data, loading, error, refetch } = useApi(() => fetchMartyrs(params), [queryKey]);
 
   const martyrs = data?.martyrs ?? [];
   const meta = data?.meta ?? null;
   const hasFilters = Object.values(filters).some(Boolean);
+
+  // Which slice of the whole result set is on screen.
+  const rangeFrom = meta ? (meta.page - 1) * meta.limit + 1 : 0;
+  const rangeTo = meta ? Math.min(meta.page * meta.limit, meta.total) : 0;
 
   const selects = [
     { key: "state", label: "All States", items: options.data?.states ?? [] },
@@ -68,9 +82,9 @@ export default function MartyrsList() {
         subtitle="Directory of India's gallantry award recipients. Filter by state, branch, award, or status."
       />
 
-      <div className="space-y-4 rounded-xl border border-stone-300 bg-white/80 p-4 shadow-xs">
+      <div className="space-y-4 rounded-xl border border-rule-strong bg-raised p-4 shadow-xs">
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#D96B27]">
+          <span className="flex items-center gap-2 text-label font-bold uppercase tracking-wider text-accent-deep">
             <Filter className="h-4 w-4" aria-hidden="true" />
             Filters &amp; Search
           </span>
@@ -81,7 +95,7 @@ export default function MartyrsList() {
                 setFilters(EMPTY_FILTERS);
                 setPage(1);
               }}
-              className="text-xs font-medium text-stone-500 underline underline-offset-2 hover:text-[#D96B27]"
+              className="text-label font-medium text-muted underline underline-offset-2 hover:text-accent-deep"
             >
               Clear all
             </button>
@@ -91,7 +105,7 @@ export default function MartyrsList() {
         <div className="grid grid-cols-5 gap-3">
           <div className="relative col-span-1">
             <Search
-              className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-stone-400"
+              className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-faint"
               aria-hidden="true"
             />
             <input
@@ -145,42 +159,51 @@ export default function MartyrsList() {
         emptyTitle="No records match your filters"
         emptyHint={hasFilters ? "Try widening or clearing the filters above." : undefined}
       >
-        <div className="space-y-6">
-          <div className="grid grid-cols-3 gap-4">
-            {martyrs.map((martyr) => (
-              <Link
-                key={recordId(martyr) ?? martyr.slug}
-                to={`/martyrs/${martyr.slug}`}
-                className="group block"
+        <div className="space-y-4">
+          {/* Count and ordering. Both describe the whole result set, not the
+              page, which is why the sort is applied by the API. */}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="text-body text-muted" aria-live="polite">
+              {meta ? (
+                <>
+                  Showing{" "}
+                  <span className="font-semibold text-ink">
+                    {rangeFrom}–{rangeTo}
+                  </span>{" "}
+                  of <span className="font-semibold text-ink">{meta.total}</span>{" "}
+                  {meta.total === 1 ? "recipient" : "recipients"}
+                </>
+              ) : null}
+            </p>
+
+            <label className="flex items-center gap-2 text-body text-muted">
+              Sort by
+              <select
+                value={sort}
+                onChange={(e) => {
+                  setSort(e.target.value);
+                  // Reordering while on page 3 would leave the reader somewhere
+                  // arbitrary in the new sequence.
+                  setPage(1);
+                }}
+                className="rounded-control border border-rule-strong bg-raised px-2.5 py-1.5 text-body text-ink-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-deep"
               >
-                <SpotlightCard className="flex h-full flex-col justify-between space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <AwardBadge name={primaryAward(martyr)} />
-                      <StatusBadge status={martyr.status} />
-                    </div>
-
-                    <div>
-                      <h3 className="font-display text-xl font-bold text-[#1A241A] transition-colors group-hover:text-[#D96B27]">
-                        {displayName(martyr)}
-                      </h3>
-                      <p className="text-xs font-medium text-stone-600">
-                        {martyr.regiment || martyr.serviceBranch}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t border-stone-200 pt-3 text-xs text-stone-600">
-                    <span>{martyr.placeOfBirth?.state || "India"}</span>
-                    <span className="flex items-center gap-0.5 font-bold text-[#D96B27]">
-                      View Profile
-                      <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-                    </span>
-                  </div>
-                </SpotlightCard>
-              </Link>
-            ))}
+                {SORT_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
+
+          <ResultList>
+            {martyrs.map((martyr) => (
+              <li key={recordId(martyr) ?? martyr.slug}>
+                <ResultRow martyr={martyr} />
+              </li>
+            ))}
+          </ResultList>
 
           <Pagination meta={meta} onChange={setPage} />
         </div>

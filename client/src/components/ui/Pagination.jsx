@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const BTN =
-  "inline-flex items-center gap-1 rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-medium text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex items-center gap-1 rounded-lg border border-rule-strong bg-raised px-3 py-2 text-label font-medium text-ink-700 transition-colors hover:bg-sunken disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-deep";
 
 /**
  * `meta` is the { total, page, limit, pages } envelope the API returns.
@@ -17,8 +17,8 @@ export function Pagination({ meta, onChange }) {
       aria-label="Pagination"
       className="flex flex-row items-center justify-between gap-3 pt-4"
     >
-      <p className="text-xs text-stone-500">
-        Page <span className="font-semibold text-stone-700">{page}</span> of {pages}
+      <p className="text-label text-muted">
+        Page <span className="font-semibold text-ink-700">{page}</span> of {pages}
         <span> · {total} records</span>
       </p>
 

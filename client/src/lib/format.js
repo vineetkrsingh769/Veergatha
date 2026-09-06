@@ -32,6 +32,17 @@ export function displayName(martyr) {
   return [martyr.rank, martyr.fullName].filter(Boolean).join(" ");
 }
 
+/**
+ * Monogram for the portrait placeholder. Built from fullName only — rank is a
+ * separate field, so "Captain Vikram Batra" must not yield "CB".
+ */
+export function initialsOf(martyr) {
+  const words = (martyr?.fullName ?? "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return "";
+  const letters = words.length === 1 ? [words[0]] : [words[0], words[words.length - 1]];
+  return letters.map((w) => w[0].toUpperCase()).join("");
+}
+
 export function birthplaceOf(martyr, fallback = "India") {
   const parts = [
     martyr?.placeOfBirth?.village,

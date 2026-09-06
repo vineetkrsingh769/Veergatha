@@ -23,13 +23,13 @@ function ResultGroup({ icon: Icon, label, count, items, empty, render }) {
     <Section
       title={
         <span className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-[#D96B27]" aria-hidden="true" />
+          <Icon className="h-4 w-4 text-accent-deep" aria-hidden="true" />
           {label} ({count})
         </span>
       }
     >
       {items.length === 0 ? (
-        <p className="text-xs text-stone-500">{empty}</p>
+        <p className="text-label text-muted">{empty}</p>
       ) : (
         <PersonGrid>{items.map(render)}</PersonGrid>
       )}
@@ -60,7 +60,7 @@ export default function SearchPage() {
 
       <div className="relative max-w-2xl">
         <SearchIcon
-          className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-stone-400"
+          className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-faint"
           aria-hidden="true"
         />
         <input
@@ -69,7 +69,7 @@ export default function SearchPage() {
           placeholder="Search by name, regiment, location, or conflict…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full rounded-xl border border-stone-300 bg-white/85 py-3 pl-12 pr-4 text-sm text-stone-800 placeholder-stone-400 shadow-xs focus:border-[#D96B27] focus:outline-none"
+          className="w-full rounded-xl border border-rule-strong bg-raised py-3 pl-12 pr-4 text-body text-ink-700 placeholder-faint shadow-xs focus:border-accent focus:outline-none"
         />
       </div>
 

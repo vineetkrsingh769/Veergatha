@@ -7,7 +7,7 @@ export function BackLink({ to, children }) {
   return (
     <Link
       to={to}
-      className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 transition-colors hover:text-[#D96B27]"
+      className="inline-flex items-center gap-1.5 text-label font-medium text-muted transition-colors hover:text-accent-deep"
     >
       <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
       <span>{children}</span>
@@ -17,35 +17,98 @@ export function BackLink({ to, children }) {
 
 export function Pill({ icon: Icon, children }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-[#D96B27]/30 bg-[#D96B27]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#C25016]">
+    <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-label font-semibold uppercase tracking-wide text-accent-deep">
       {Icon && <Icon className="h-3.5 w-3.5" aria-hidden="true" />}
       {children}
     </span>
   );
 }
 
-export function DetailPanel({ pill, title, lede, aside, children }) {
-  return (
-    <div className="space-y-5 rounded-2xl border border-stone-300 bg-white/85 p-7 shadow-xs">
-      <div className="flex flex-col gap-3">
+/**
+ * `media` and `accent` are optional. MemorialDetail and WarDetail pass neither
+ * and render exactly as before; the recipient profile passes both.
+ *
+ * `children` deliberately sits OUTSIDE the media grid, spanning the full panel
+ * width. That keeps the metadata grid on one alignment instead of squeezing it
+ * into the narrow column beside a portrait.
+ */
+export function DetailPanel({ pill, title, lede, aside, media, accent, children }) {
+  const head = (
+    <div className="flex min-w-0 flex-col gap-3">
+      {(pill || aside) && (
         <div className="flex flex-wrap items-center gap-2">
           {pill}
           {aside}
         </div>
-        <h1 className="font-display text-5xl font-bold leading-tight text-[#1E431B]">
-          {title}
-        </h1>
-        {lede && <p className="max-w-3xl text-sm leading-relaxed text-stone-700">{lede}</p>}
-      </div>
+      )}
+      {/* break-words so a single very long name cannot push the panel wider */}
+      <h1 className="font-display text-display font-bold leading-tight text-tiranga-700 break-words">
+        {title}
+      </h1>
+      {accent}
+      {lede && <p className="max-w-reading text-body leading-relaxed text-ink-700">{lede}</p>}
+    </div>
+  );
+
+  return (
+    <div className="space-y-5 rounded-2xl border border-rule-strong bg-raised p-7 shadow-xs">
+      {media ? (
+        <div className="grid grid-cols-[13.75rem_minmax(0,1fr)] items-start gap-7">
+          {media}
+          {head}
+        </div>
+      ) : (
+        head
+      )}
       {children}
     </div>
+  );
+}
+
+/**
+ * Portrait, or the absence of one.
+ *
+ * No record in the archive currently has a photograph, so the placeholder is
+ * the default path rather than an edge case — it is a monogram in the serif
+ * face on a flat ground, not a grey silhouette. A silhouette says "missing
+ * avatar"; a monogram and a stated absence say "no photograph on record", which
+ * is the true and more dignified claim.
+ *
+ * A real portrait is presented plainly: no drop shadow, no circular crop, no
+ * hover zoom. Credit is rendered when present because the open licences the
+ * upload pipeline accepts (GODL-India, CC-BY) require attribution.
+ */
+export function Portrait({ src, alt, credit, initials }) {
+  const frame = "aspect-[3/4] w-full rounded-frame border border-rule-strong";
+
+  if (!src) {
+    return (
+      <figure className="m-0">
+        <div
+          className={`${frame} flex items-center justify-center bg-sunken`}
+          aria-hidden="true"
+        >
+          <span className="font-display text-display font-bold text-faint">{initials}</span>
+        </div>
+        <figcaption className="mt-2 text-caption text-muted">
+          No photograph on record
+        </figcaption>
+      </figure>
+    );
+  }
+
+  return (
+    <figure className="m-0">
+      <img src={src} alt={alt} className={`${frame} object-cover`} />
+      {credit && <figcaption className="mt-2 text-caption text-muted">{credit}</figcaption>}
+    </figure>
   );
 }
 
 /** Three-column definition grid. Desktop-only layout. */
 export function MetaGrid({ children }) {
   return (
-    <dl className="grid grid-cols-3 gap-4 border-t border-stone-200 pt-4 text-xs">
+    <dl className="grid grid-cols-3 gap-4 border-t border-rule pt-4 text-label">
       {children}
     </dl>
   );
@@ -55,10 +118,10 @@ export function MetaItem({ icon: Icon, label, value }) {
   if (value == null || value === "") return null;
   return (
     <div className="flex items-start gap-2">
-      {Icon && <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#D96B27]" aria-hidden="true" />}
+      {Icon && <Icon className="mt-0.5 h-4 w-4 shrink-0 text-accent-deep" aria-hidden="true" />}
       <div className="min-w-0">
-        <dt className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">{label}</dt>
-        <dd className="text-stone-800">{value}</dd>
+        <dt className="text-caption font-semibold uppercase tracking-wide text-muted">{label}</dt>
+        <dd className="text-ink-700">{value}</dd>
       </div>
     </div>
   );
@@ -69,19 +132,19 @@ export function PersonLink({ to, name, detail, accent = false }) {
   return (
     <Link
       to={to}
-      className="flex items-center justify-between gap-3 rounded-xl border border-stone-300 bg-white/70 p-4 transition-colors hover:border-[#D96B27]/60 hover:bg-white"
+      className="flex items-center justify-between gap-3 rounded-xl border border-rule-strong bg-raised p-4 transition-colors hover:border-accent/60 hover:bg-sunken"
     >
       <span className="min-w-0">
-        <span className="block truncate text-sm font-semibold text-[#1A241A]">{name}</span>
+        <span className="block truncate text-body font-semibold text-ink">{name}</span>
         {detail && (
           <span
-            className={`mt-0.5 block truncate text-xs ${accent ? "font-semibold text-[#C25016]" : "text-stone-600"}`}
+            className={`mt-0.5 block truncate text-label ${accent ? "font-semibold text-accent-deep" : "text-muted"}`}
           >
             {detail}
           </span>
         )}
       </span>
-      <ChevronRight className="h-4 w-4 shrink-0 text-stone-400" aria-hidden="true" />
+      <ChevronRight className="h-4 w-4 shrink-0 text-faint" aria-hidden="true" />
     </Link>
   );
 }
@@ -93,10 +156,10 @@ export function PersonGrid({ children }) {
 export function NotFound({ message, backTo, backLabel }) {
   return (
     <div className="mx-auto max-w-xl space-y-4 px-4 py-16 text-center">
-      <p className="text-sm text-rose-700">{message}</p>
+      <p className="text-body text-danger">{message}</p>
       <Link
         to={backTo}
-        className="inline-block text-xs font-medium text-[#C25016] underline underline-offset-2"
+        className="inline-block text-label font-medium text-accent-deep underline underline-offset-2"
       >
         ← {backLabel}
       </Link>

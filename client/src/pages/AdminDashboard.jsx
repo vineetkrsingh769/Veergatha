@@ -203,13 +203,13 @@ export default function AdminDashboard() {
 
   return (
     <PageContainer className="space-y-6">
-      <header className="flex flex-row items-end justify-between gap-4 border-b border-stone-300 pb-5">
+      <header className="flex flex-row items-end justify-between gap-4 border-b border-rule-strong pb-5">
         <div className="space-y-1">
-          <h1 className="flex items-center gap-2 font-display text-3xl font-bold text-[#1E431B]">
-            <Shield className="h-5 w-5 text-[#D96B27]" aria-hidden="true" />
+          <h1 className="flex items-center gap-2 font-display text-heading font-bold text-tiranga-700">
+            <Shield className="h-5 w-5 text-accent-deep" aria-hidden="true" />
             Editorial Control Panel
           </h1>
-          <p className="text-xs text-stone-600">
+          <p className="text-label text-muted">
             Signed in as {user?.email} ({user?.role})
           </p>
         </div>
@@ -233,14 +233,14 @@ export default function AdminDashboard() {
       {error && (
         <div
           role="alert"
-          className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"
+          className="flex items-center gap-2 rounded-lg border border-danger-rule bg-danger-bg p-3 text-label text-danger"
         >
           <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}
 
-      <div className="flex flex-row items-center justify-between gap-3 border-b border-stone-300 pb-3">
+      <div className="flex flex-row items-center justify-between gap-3 border-b border-rule-strong pb-3">
         <div className="flex gap-1 overflow-x-auto" role="tablist">
           {TABS.map(({ key, label, icon: Icon }) => (
             <button
@@ -248,10 +248,10 @@ export default function AdminDashboard() {
               role="tab"
               aria-selected={tab === key}
               onClick={() => setTab(key)}
-              className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 pb-2.5 text-xs font-semibold transition-colors ${
+              className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 pb-2.5 text-label font-semibold transition-colors ${
                 tab === key
-                  ? "border-[#D96B27] text-[#C25016]"
-                  : "border-transparent text-stone-500 hover:text-stone-800"
+                  ? "border-accent text-accent-deep"
+                  : "border-transparent text-muted hover:text-ink-700"
               }`}
             >
               <Icon className="h-4 w-4" aria-hidden="true" />
@@ -260,12 +260,12 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        <label className="flex items-center gap-2 text-xs text-stone-600">
+        <label className="flex items-center gap-2 text-label text-muted">
           <span className="shrink-0">Verification:</span>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded border border-stone-300 bg-white px-2 py-1 text-stone-800 focus:border-[#D96B27] focus:outline-none"
+            className="rounded border border-rule-strong bg-raised px-2 py-1 text-ink-700 focus:border-accent focus:outline-none"
           >
             <option value="">All statuses</option>
             {VERIFICATION_STATUS.map((s) => (
@@ -283,17 +283,17 @@ export default function AdminDashboard() {
           rows={records.martyrs}
           empty="No recipient records match this filter."
           renderRow={(m) => (
-            <tr key={recordId(m) ?? m.slug} className="hover:bg-stone-50">
-              <td className="p-3 font-semibold text-[#1A241A]">{displayName(m)}</td>
-              <td className="p-3 text-stone-700">{m.regiment || m.serviceBranch}</td>
-              <td className="p-3 font-mono text-[11px] text-stone-600">{m.status}</td>
+            <tr key={recordId(m) ?? m.slug} className="hover:bg-sunken">
+              <td className="p-3 font-semibold text-ink">{displayName(m)}</td>
+              <td className="p-3 text-ink-700">{m.regiment || m.serviceBranch}</td>
+              <td className="p-3 font-mono text-caption text-muted">{m.status}</td>
               <td className="p-3">
                 <button
                   onClick={() => toggleVerification(m)}
                   title="Toggle verification"
                   className="inline-flex items-center gap-1"
                 >
-                  <CheckCircle2 className="h-3 w-3 text-stone-400" aria-hidden="true" />
+                  <CheckCircle2 className="h-3 w-3 text-faint" aria-hidden="true" />
                   <VerificationBadge status={m.verification?.status} />
                 </button>
               </td>
@@ -301,7 +301,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => removeRecord(m)}
                   title="Delete record"
-                  className="p-1.5 text-stone-400 transition-colors hover:text-rose-600"
+                  className="p-1.5 text-faint transition-colors hover:text-danger"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -317,10 +317,10 @@ export default function AdminDashboard() {
           rows={records.memorials}
           empty="No memorial records match this filter."
           renderRow={(m) => (
-            <tr key={recordId(m) ?? m.slug} className="hover:bg-stone-50">
-              <td className="p-3 font-semibold text-[#1A241A]">{m.name}</td>
-              <td className="p-3 text-stone-700">{memorialLocation(m)}</td>
-              <td className="p-3 text-stone-700">{m.inauguratedYear ?? "—"}</td>
+            <tr key={recordId(m) ?? m.slug} className="hover:bg-sunken">
+              <td className="p-3 font-semibold text-ink">{m.name}</td>
+              <td className="p-3 text-ink-700">{memorialLocation(m)}</td>
+              <td className="p-3 text-ink-700">{m.inauguratedYear ?? "—"}</td>
               <td className="p-3">
                 <VerificationBadge status={m.verification?.status} />
               </td>
@@ -335,10 +335,10 @@ export default function AdminDashboard() {
           rows={records.wars}
           empty="No conflicts recorded yet."
           renderRow={(w) => (
-            <tr key={recordId(w) ?? w.slug} className="hover:bg-stone-50">
-              <td className="p-3 font-semibold text-[#1A241A]">{w.name}</td>
-              <td className="p-3 capitalize text-stone-700">{w.type}</td>
-              <td className="p-3 text-stone-700">{conflictYears(w)}</td>
+            <tr key={recordId(w) ?? w.slug} className="hover:bg-sunken">
+              <td className="p-3 font-semibold text-ink">{w.name}</td>
+              <td className="p-3 capitalize text-ink-700">{w.type}</td>
+              <td className="p-3 text-ink-700">{conflictYears(w)}</td>
               <td className="p-3">
                 <VerificationBadge status={w.verification?.status} />
               </td>
@@ -353,19 +353,19 @@ export default function AdminDashboard() {
           rows={records.media}
           empty="No media uploaded yet."
           renderRow={(item) => (
-            <tr key={recordId(item)} className="hover:bg-stone-50">
+            <tr key={recordId(item)} className="hover:bg-sunken">
               <td className="p-2">
                 <img
                   src={item.cloudinary?.secureUrl}
                   alt=""
                   width={48}
                   height={48}
-                  className="h-12 w-12 rounded border border-stone-300 object-cover"
+                  className="h-12 w-12 rounded border border-rule-strong object-cover"
                 />
               </td>
-              <td className="p-3 font-semibold text-[#1A241A]">{item.title || "Untitled"}</td>
-              <td className="p-3 text-stone-700">{item.license}</td>
-              <td className="p-3 text-stone-600">{item.credit || "—"}</td>
+              <td className="p-3 font-semibold text-ink">{item.title || "Untitled"}</td>
+              <td className="p-3 text-ink-700">{item.license}</td>
+              <td className="p-3 text-muted">{item.credit || "—"}</td>
               <td className="p-3">
                 <button onClick={() => toggleMediaVerification(item)} title="Toggle verification">
                   <VerificationBadge status={item.verification?.status} />
@@ -375,7 +375,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => removeMedia(item)}
                   title="Delete media"
-                  className="p-1.5 text-stone-400 transition-colors hover:text-rose-600"
+                  className="p-1.5 text-faint transition-colors hover:text-danger"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -400,10 +400,10 @@ function RecordTable({ columns, rows, empty, renderRow }) {
   if (rows.length === 0) return <EmptyState title={empty} />;
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-stone-300 bg-white/80">
-      <table className="w-full border-collapse text-left text-xs">
+    <div className="overflow-x-auto rounded-xl border border-rule-strong bg-raised">
+      <table className="w-full border-collapse text-left text-label">
         <thead>
-          <tr className="border-b border-stone-300 bg-stone-100 text-stone-600">
+          <tr className="border-b border-rule-strong bg-sunken text-muted">
             {columns.map((col, i) => (
               <th key={col || i} scope="col" className="whitespace-nowrap p-3 font-semibold">
                 {col}
@@ -411,7 +411,7 @@ function RecordTable({ columns, rows, empty, renderRow }) {
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-stone-200">{rows.map(renderRow)}</tbody>
+        <tbody className="divide-y divide-rule">{rows.map(renderRow)}</tbody>
       </table>
     </div>
   );
@@ -442,22 +442,22 @@ function NewRecordModal({ onClose, onCreate }) {
       role="dialog"
       aria-modal="true"
       aria-label="Add new recipient record"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-2xl border border-stone-300 bg-[#FAF7F2] p-6 shadow-lg"
+        className="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-2xl border border-rule-strong bg-surface p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-stone-300 pb-3">
-          <h2 className="font-display text-lg font-bold text-[#1E431B]">Add Recipient Record</h2>
-          <button onClick={onClose} aria-label="Close" className="text-stone-400 hover:text-stone-700">
+        <div className="flex items-center justify-between border-b border-rule-strong pb-3">
+          <h2 className="font-display text-title font-bold text-tiranga-700">Add Recipient Record</h2>
+          <button onClick={onClose} aria-label="Close" className="text-faint hover:text-ink-700">
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
         {error && (
-          <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+          <div role="alert" className="rounded-lg border border-danger-rule bg-danger-bg p-3 text-label text-danger">
             {error}
           </div>
         )}

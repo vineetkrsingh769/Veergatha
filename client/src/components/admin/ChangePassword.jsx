@@ -56,26 +56,26 @@ export default function ChangePassword({ onClose }) {
       role="dialog"
       aria-modal="true"
       aria-label="Change password"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md space-y-4 rounded-2xl border border-stone-300 bg-[#FAF7F2] p-6 shadow-lg"
+        className="w-full max-w-md space-y-4 rounded-2xl border border-rule-strong bg-surface p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-stone-300 pb-3">
-          <h2 className="flex items-center gap-2 font-display text-lg font-bold text-[#1E431B]">
-            <KeyRound className="h-4 w-4 text-[#D96B27]" aria-hidden="true" />
+        <div className="flex items-center justify-between border-b border-rule-strong pb-3">
+          <h2 className="flex items-center gap-2 font-display text-title font-bold text-tiranga-700">
+            <KeyRound className="h-4 w-4 text-accent-deep" aria-hidden="true" />
             Change password
           </h2>
-          <button onClick={onClose} aria-label="Close" className="text-stone-400 hover:text-stone-700">
+          <button onClick={onClose} aria-label="Close" className="text-faint hover:text-ink-700">
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
         {done ? (
           <div className="space-y-4">
-            <div className="flex items-start gap-2 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-900">
+            <div className="flex items-start gap-2 rounded-lg border border-success-rule bg-success-bg p-3 text-label text-success">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <span>
                 Password changed. You are still signed in here; every other session has been
@@ -91,7 +91,7 @@ export default function ChangePassword({ onClose }) {
             {error && (
               <div
                 role="alert"
-                className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"
+                className="flex items-start gap-2 rounded-lg border border-danger-rule bg-danger-bg p-3 text-label text-danger"
               >
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                 <span>{error}</span>
@@ -135,7 +135,7 @@ export default function ChangePassword({ onClose }) {
               {busy ? "Changing…" : "Change password"}
             </Button>
 
-            <p className="text-[11px] leading-relaxed text-stone-500">
+            <p className="text-caption leading-relaxed text-muted">
               Changing the password signs out every other session immediately. Your current
               password is required, so a borrowed session cannot lock you out of your own account.
             </p>

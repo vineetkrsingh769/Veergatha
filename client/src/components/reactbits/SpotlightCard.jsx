@@ -7,7 +7,10 @@ import { useRef, useState } from "react";
 export default function SpotlightCard({
   children,
   className = "",
-  spotlightColor = "rgba(217, 107, 39, 0.14)", // Saffron watercolor glow
+  // Reads the accent token rather than restating it. What this replaced was the
+  // accent colour written out as an rgba triplet — the same value in disguise,
+  // which a search for hex literals never caught.
+  spotlightColor = "color-mix(in oklab, var(--color-accent) 14%, transparent)",
 }) {
   const divRef = useRef(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -29,7 +32,7 @@ export default function SpotlightCard({
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`relative overflow-hidden rounded-xl border border-stone-300/80 bg-white/90 shadow-sm p-5 transition-all duration-300 hover:border-amber-600/50 hover:shadow-md ${className}`}
+      className={`relative overflow-hidden rounded-xl border border-rule-strong/80 bg-raised shadow-sm p-5 transition-all duration-300 hover:border-accent/50 hover:shadow-md ${className}`}
     >
       <div
         className="pointer-events-none absolute -inset-px transition-opacity duration-300"

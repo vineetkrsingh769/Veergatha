@@ -11,10 +11,10 @@ export function Loading({ label = "Loading records…", className = "" }) {
     <div
       role="status"
       aria-live="polite"
-      className={`flex flex-col items-center justify-center gap-3 py-16 text-stone-500 ${className}`}
+      className={`flex flex-col items-center justify-center gap-3 py-16 text-muted ${className}`}
     >
-      <Loader2 className="h-5 w-5 animate-spin text-[#D96B27]" aria-hidden="true" />
-      <span className="text-sm">{label}</span>
+      <Loader2 className="h-5 w-5 animate-spin text-accent-deep" aria-hidden="true" />
+      <span className="text-body">{label}</span>
     </div>
   );
 }
@@ -23,15 +23,15 @@ export function ErrorState({ message = "Something went wrong.", onRetry, classNa
   return (
     <div
       role="alert"
-      className={`flex flex-col items-center gap-3 rounded-xl border border-rose-200 bg-rose-50/80 px-6 py-12 text-center ${className}`}
+      className={`flex flex-col items-center gap-3 rounded-xl border border-danger-rule bg-danger-bg/80 px-6 py-12 text-center ${className}`}
     >
-      <AlertCircle className="h-5 w-5 text-rose-600" aria-hidden="true" />
-      <p className="text-sm text-rose-800">{message}</p>
+      <AlertCircle className="h-5 w-5 text-danger" aria-hidden="true" />
+      <p className="text-body text-danger">{message}</p>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
-          className="rounded-lg border border-rose-300 bg-white px-4 py-2 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-100"
+          className="rounded-lg border border-danger-rule bg-raised px-4 py-2 text-label font-semibold text-danger transition-colors hover:bg-danger-bg"
         >
           Try again
         </button>
@@ -48,11 +48,11 @@ export function EmptyState({
 }) {
   return (
     <div
-      className={`flex flex-col items-center gap-2 rounded-xl border border-stone-300/80 bg-white/60 px-6 py-16 text-center ${className}`}
+      className={`flex flex-col items-center gap-2 rounded-xl border border-rule-strong/80 bg-raised px-6 py-16 text-center ${className}`}
     >
-      <Icon className="h-5 w-5 text-stone-400" aria-hidden="true" />
-      <p className="text-sm font-medium text-stone-700">{title}</p>
-      {hint && <p className="max-w-sm text-xs text-stone-500">{hint}</p>}
+      <Icon className="h-5 w-5 text-faint" aria-hidden="true" />
+      <p className="text-body font-medium text-ink-700">{title}</p>
+      {hint && <p className="max-w-sm text-label text-muted">{hint}</p>}
     </div>
   );
 }

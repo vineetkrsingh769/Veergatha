@@ -1,7 +1,7 @@
 import { Award } from "lucide-react";
 import { MARTYR_STATUS, STATUS_LABELS } from "../../lib/constants.js";
 
-const BASE = "inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide";
+const BASE = "inline-flex items-center gap-1 rounded px-2 py-0.5 text-caption font-extrabold uppercase tracking-wide";
 
 /**
  * Status is the one label in this project that must never be wrong: describing
@@ -14,10 +14,10 @@ export function StatusBadge({ status, className = "" }) {
 
   const tone =
     status === MARTYR_STATUS.FELL
-      ? "bg-rose-100 border border-rose-300 text-rose-800"
+      ? "bg-danger-bg border border-danger-rule text-danger"
       : status === MARTYR_STATUS.SURVIVED
-        ? "bg-emerald-100 border border-emerald-300 text-emerald-800"
-        : "bg-stone-100 border border-stone-300 text-stone-600";
+        ? "bg-success-bg border border-success-rule text-success"
+        : "bg-sunken border border-rule-strong text-muted";
 
   return (
     <span className={`${BASE} ${tone} ${className}`}>
@@ -27,9 +27,9 @@ export function StatusBadge({ status, className = "" }) {
 }
 
 const VERIFICATION_TONE = {
-  verified: "bg-emerald-100 border border-emerald-300 text-emerald-800",
-  "in-review": "bg-amber-100 border border-amber-300 text-amber-800",
-  draft: "bg-stone-100 border border-stone-300 text-stone-600",
+  verified: "bg-success-bg border border-success-rule text-success",
+  "in-review": "bg-warning-bg border border-warning-rule text-warning",
+  draft: "bg-sunken border border-rule-strong text-muted",
 };
 
 export function VerificationBadge({ status = "draft", className = "" }) {
@@ -40,7 +40,7 @@ export function VerificationBadge({ status = "draft", className = "" }) {
 export function AwardBadge({ name, className = "" }) {
   if (!name) return null;
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-bold text-[#C25016] ${className}`}>
+    <span className={`inline-flex items-center gap-1 text-label font-bold text-accent-deep ${className}`}>
       <Award className="h-3.5 w-3.5" aria-hidden="true" />
       {name}
     </span>

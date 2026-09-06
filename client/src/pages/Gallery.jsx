@@ -26,27 +26,27 @@ function Lightbox({ item, onClose }) {
       role="dialog"
       aria-modal="true"
       aria-label={item.title || "Archive image"}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/70 p-8 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/70 p-8 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-stone-300 bg-[#FAF7F2] shadow-lg"
+        className="flex max-h-[88vh] w-full max-w-feature flex-col overflow-hidden rounded-2xl border border-rule-strong bg-surface shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-stone-300 px-5 py-3">
-          <h2 className="font-display text-lg font-bold text-[#1E431B]">
+        <div className="flex items-center justify-between border-b border-rule-strong px-5 py-3">
+          <h2 className="font-display text-title font-bold text-tiranga-700">
             {item.title || "Untitled"}
           </h2>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="text-stone-400 transition-colors hover:text-stone-700"
+            className="text-faint transition-colors hover:text-ink-700"
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="flex min-h-0 flex-1 items-center justify-center bg-stone-100 p-4">
+        <div className="flex min-h-0 flex-1 items-center justify-center bg-sunken p-4">
           <img
             src={item.cloudinary?.secureUrl}
             alt={item.description || item.title || ""}
@@ -54,25 +54,25 @@ function Lightbox({ item, onClose }) {
           />
         </div>
 
-        <div className="space-y-2 border-t border-stone-300 px-5 py-4 text-xs">
-          {item.description && <p className="text-stone-700">{item.description}</p>}
+        <div className="space-y-2 border-t border-rule-strong px-5 py-4 text-label">
+          {item.description && <p className="text-ink-700">{item.description}</p>}
 
-          <dl className="flex flex-wrap gap-x-6 gap-y-1 text-stone-600">
+          <dl className="flex flex-wrap gap-x-6 gap-y-1 text-muted">
             {item.credit && (
               <div className="flex gap-1.5">
-                <dt className="font-semibold text-stone-500">Credit:</dt>
+                <dt className="font-semibold text-muted">Credit:</dt>
                 <dd>{item.credit}</dd>
               </div>
             )}
             <div className="flex gap-1.5">
-              <dt className="font-semibold text-stone-500">Licence:</dt>
+              <dt className="font-semibold text-muted">Licence:</dt>
               <dd>{item.license}</dd>
             </div>
             {subject && (
               <div className="flex gap-1.5">
-                <dt className="font-semibold text-stone-500">Subject:</dt>
+                <dt className="font-semibold text-muted">Subject:</dt>
                 <dd>
-                  <Link to={subject.to} className="font-semibold text-[#C25016] hover:underline">
+                  <Link to={subject.to} className="font-semibold text-accent-deep hover:underline">
                     {subject.label}
                   </Link>
                 </dd>
@@ -85,7 +85,7 @@ function Lightbox({ item, onClose }) {
               href={item.sourceUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 font-semibold text-[#C25016] hover:underline"
+              className="inline-flex items-center gap-1 font-semibold text-accent-deep hover:underline"
             >
               Original source
               <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -128,9 +128,9 @@ export default function Gallery() {
                 key={recordId(item)}
                 type="button"
                 onClick={() => setActive(item)}
-                className="group overflow-hidden rounded-xl border border-stone-300 bg-white/70 text-left transition-colors hover:border-[#D96B27]/60"
+                className="group overflow-hidden rounded-xl border border-rule-strong bg-raised text-left transition-colors hover:border-accent/60"
               >
-                <span className="block aspect-[4/3] overflow-hidden bg-stone-100">
+                <span className="block aspect-[4/3] overflow-hidden bg-sunken">
                   <img
                     src={item.cloudinary?.secureUrl}
                     alt={item.description || item.title || ""}
@@ -142,15 +142,15 @@ export default function Gallery() {
                 </span>
 
                 <span className="block space-y-1 p-3">
-                  <span className="block truncate text-sm font-semibold text-[#1A241A]">
+                  <span className="block truncate text-body font-semibold text-ink">
                     {item.title || "Untitled"}
                   </span>
                   {/* GODL-India and the CC licences require the credit to be shown,
                       not just recorded — so it sits on the card, not only in the modal. */}
                   {ATTRIBUTION_REQUIRED.has(item.license) && item.credit && (
-                    <span className="block truncate text-[11px] text-stone-500">{item.credit}</span>
+                    <span className="block truncate text-caption text-muted">{item.credit}</span>
                   )}
-                  <span className="inline-block rounded border border-stone-300 bg-stone-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stone-600">
+                  <span className="inline-block rounded border border-rule-strong bg-sunken px-1.5 py-0.5 text-caption font-semibold uppercase tracking-wide text-muted">
                     {item.license}
                   </span>
                 </span>
