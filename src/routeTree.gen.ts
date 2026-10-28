@@ -15,6 +15,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CorrectionsRouteImport } from './routes/corrections'
 import { Route as GalleryRouteImport } from './routes/gallery'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as MartyrsIndexRouteImport } from './routes/martyrs.index'
@@ -60,6 +61,11 @@ const CorrectionsRoute = CorrectionsRouteImport.update({
 const GalleryRoute = GalleryRouteImport.update({
   id: '/gallery',
   path: '/gallery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SearchRoute = SearchRouteImport.update({
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/corrections': typeof CorrectionsRoute
   '/gallery': typeof GalleryRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/martyrs/$slug': typeof MartyrsSlugRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/corrections': typeof CorrectionsRoute
   '/gallery': typeof GalleryRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/martyrs/$slug': typeof MartyrsSlugRoute
   '/memorials/$slug': typeof MemorialsSlugRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/corrections': typeof CorrectionsRoute
   '/gallery': typeof GalleryRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/martyrs/$slug': typeof MartyrsSlugRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/corrections'
     | '/gallery'
+    | '/reset-password'
     | '/search'
     | '/admin'
     | '/martyrs/$slug'
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/corrections'
     | '/gallery'
+    | '/reset-password'
     | '/search'
     | '/martyrs/$slug'
     | '/memorials/$slug'
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/corrections'
     | '/gallery'
+    | '/reset-password'
     | '/search'
     | '/_authenticated/admin'
     | '/martyrs/$slug'
@@ -311,6 +323,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CorrectionsRoute: typeof CorrectionsRoute
   GalleryRoute: typeof GalleryRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
   MartyrsSlugRoute: typeof MartyrsSlugRoute
   MemorialsSlugRoute: typeof MemorialsSlugRoute
@@ -362,6 +375,13 @@ declare module '@tanstack/react-router' {
       path: '/gallery'
       fullPath: '/gallery'
       preLoaderRoute: typeof GalleryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/search': {
@@ -532,6 +552,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CorrectionsRoute: CorrectionsRoute,
   GalleryRoute: GalleryRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
   MartyrsSlugRoute: MartyrsSlugRoute,
   MemorialsSlugRoute: MemorialsSlugRoute,

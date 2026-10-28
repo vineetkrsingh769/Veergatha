@@ -124,7 +124,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const isDesk = path.startsWith("/admin") || path === "/auth";
+  const isDesk = path.startsWith("/admin") || path === "/auth" || path === "/reset-password";
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
