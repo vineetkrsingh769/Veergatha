@@ -1,177 +1,71 @@
 # Veergatha
 
-A digital archive of India's gallantry award recipients and the war memorials that hold
-their names. *Veergatha* — Sanskrit for tales of bravery.
+A digital archive of India's gallantry award recipients, the conflicts they served in, and the
+war memorials that carry their names. *Veergatha*: Sanskrit for tales of bravery.
 
-This document is the working PRD as well as the repo entry point. Detailed design lives in
-[docs/DATA_MODEL.md](docs/DATA_MODEL.md) and [docs/SOURCING.md](docs/SOURCING.md).
-
-## The problem
-
-India's military heritage is recorded across gazette notifications, regimental histories,
-memorial plaques and family albums. It is scattered, uneven, and largely unsearchable. A
-citation exists on a government portal, the memorial that carries the name is documented
-somewhere else, and the conflict they belong to is a third search. Nothing joins them.
-
-Veergatha joins them, and shows its working — every published fact carries its source.
-
-## Scope
-
-**In scope**
-
-- Profiles of gallantry award recipients: service details, award citation, biography, portrait
-- A directory of war memorials with location, history and imagery
-- Conflicts and operations, each linking to the people who served in them
-- Search and filtering by name, regiment, home state, conflict and year
-- A media gallery of photographs and document scans
-- An editorial dashboard for creating, editing and verifying records
-
-**Out of scope**
-
-- Any record that cannot be traced to a verifiable source
-- Classified or operationally sensitive material
-- Political commentary, or narrative framing beyond the documented record
-- Public user accounts, comments, or user-submitted content. Contributions arrive through
-  editors, not a form.
-- Personal details of living people beyond their published service record
-
-**Scope decision: recipients who survived.** Three Param Vir Chakra recipients were decorated
-for actions they lived through. They are **included** — a Kargil page that silently omitted
-two of its four PVC recipients would be a worse historical record — but they carry
-`status: 'survived'` and are never rendered with martyrdom language. See
-[docs/SOURCING.md](docs/SOURCING.md#editorial-conventions).
-
-## Users
-
-| Who | Needs |
-|---|---|
-| Public visitor | Find a name, read the story, see where they are memorialised. Mostly on a phone. |
-| Student / researcher | Filter by conflict, regiment or state; follow sources to primaries. |
-| Family member | Find their relative's record and see it treated accurately. |
-| Editor / admin | Draft, source, review and publish records without touching the database. |
-
-## Success criteria
-
-- A visitor can go from the home page to a fully sourced profile in two clicks
-- Every published record has at least one primary source and no unlicensed imagery
-- A researcher can answer "who from Kerala died at Kargil" in one query
-- The Kargil vertical slice is complete before any other conflict is broadened
-
-## Non-functional requirements
-
-| Requirement | Target |
-|---|---|
-| Page load | Under 3s over a typical broadband connection |
-| Layout | Desktop-only; minimum width 1080px. Narrower viewports scroll horizontally rather than reflowing — see note below |
-| Images | Cloudinary transforms, correct sizing, lazy loading below the fold |
-| Security | Input validation on every write; rate-limited admin login; secrets in env only |
-| Transport | HTTPS everywhere (Vercel and Render defaults) |
-| Availability | Public browsing never requires authentication |
-
-> **On the desktop-only decision.** The client was originally built mobile-first. In August
-> 2026 the header was locked to a fixed desktop layout, and the pages and UI primitives were
-> then aligned to match so the two could not disagree — a responsive body under a fixed header
-> tears the page at narrow widths. `PageContainer` and the header both carry
-> `min-w-[1080px]`, so the whole page scrolls sideways as one unit.
->
-> This is a deliberate scope reduction, not an oversight. Restoring responsiveness means
-> reintroducing breakpoints in `client/src/components/ui/` first — those primitives carry the
-> layout for every page — and then reverting the header lock.
+Every published fact carries its source. Drafts are never public. A record cannot be verified
+without a primary source, a recipient who survived is never given a date of death, and media
+cannot be published until its licence is cleared. These rules are enforced in the database
+(see `drizzle/migrations/0000_archive_schema.sql`), not only in the UI.
 
 ## Stack
 
-| Layer | Choice | Why |
+| Layer | Choice |
+|---|---|
+| Framework | TanStack Start (React 19, file-based routing, SSR, server functions) |
+| Data and auth | Supabase (Postgres with row-level security, Supabase Auth) |
+| Schema | SQL migrations in `drizzle/migrations/` |
+| Styling | Tailwind CSS v4 with shadcn/ui components |
+| Build | Vite 8 with Nitro |
+| Package manager | pnpm |
+
+## Getting started
+
+```sh
+pnpm install
+cp .env.example .env    # fill in your Supabase values
+pnpm dev                # http://localhost:3000
+```
+
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Start the dev server |
+| `pnpm build` | Production build into `.output/` |
+| `pnpm preview` | Serve the production build |
+| `pnpm test` | Run the tests (Vitest) |
+| `pnpm lint` | Lint with ESLint |
+
+## Environment
+
+| Variable | Used by | Secret? |
 |---|---|---|
-| Database | MongoDB Atlas + Mongoose | Records are document-shaped — embedded citations, sources and awards vary by entity |
-| API | Express (Node 20+) | Plain REST, testable in Postman before any UI exists |
-| Auth | JWT, admin routes only | Public browsing stays open; no session store to run |
-| Media | Cloudinary | Upload, transform and CDN in one free tier |
-| Client | React 19 + React Router 7 + Vite | — |
-| Styling | Tailwind v4 + ReactBits components | ReactBits registries configured in `client/components.json` |
-| Hosting | Vercel (client), Render (API) | Free tiers, git-push deploys |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` | Browser | No |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Server rendering | No |
+| `DATABASE_URL` | Applying migrations with drizzle-kit | **Yes** |
 
-## Repository layout
+`.env` is git-ignored. Never commit the database URL. The site needs no service-role key: every
+read and write goes through row-level security.
+
+## Database
+
+The schema, editorial rules, access policies and seed data live in `drizzle/migrations/`, in
+order. To set up a fresh Supabase project, run them in sequence in the Supabase SQL editor, or
+with `DATABASE_URL` set.
+
+The first account to sign up becomes the archive's administrator. Create your own account
+immediately after setting up a new database.
+
+## Project layout
 
 ```
-client/          React SPA
-  src/lib/api.js   fetch wrapper; VITE_API_URL in prod, Vite proxy in dev
-  components.json  shadcn + ReactBits registries
-  vercel.json      SPA rewrite so deep links survive refresh
-server/          Express API
-  src/app.js       middleware, routes, error handling
-  src/config/db.js Mongoose connection
-docs/            Data model, sourcing workflow, content worklist
+src/
+  routes/          one file per page (TanStack file-based routing)
+    _authenticated/  pages that require sign-in (the editorial desk)
+  components/
+    archive/       site chrome, recipient cards, memorial map, shared page pieces
+    admin/         editorial desk forms and helpers
+    ui/            the shadcn/ui primitives the site uses
+  integrations/supabase/   Supabase client and generated database types
+  lib/             data access (archive.functions.ts), formatting helpers
+drizzle/migrations/        database schema, seed data and data fixes
 ```
-
-## MongoDB Atlas setup
-
-Do this once, before Phase 2 work needs data.
-
-1. Sign up at [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas) and create a
-   free **M0** cluster. Pick the region closest to you; `aws / Mumbai (ap-south-1)` is a
-   reasonable default.
-2. **Database Access** → Add New Database User. This is *not* your Atlas login. Use an
-   alphanumeric password — anything with `@ : / ? #` has to be percent-encoded in the URI
-   and is the most common cause of a failed first connection.
-3. **Network Access** → Add IP Address → **Allow access from anywhere (`0.0.0.0/0`)**.
-   Render's free tier has no static IP, so a pinned address works locally and then breaks
-   on deploy.
-4. **Database → Connect → Drivers** and copy the connection string.
-5. Insert the database name into the path, before the `?`:
-
-   ```
-   mongodb+srv://USER:PASS@cluster0.xxxxx.mongodb.net/veergatha?retryWrites=true&w=majority
-   ```
-
-   Without it you silently read and write a database called `test`.
-6. Paste it into `server/.env` as `MONGODB_URI`, then:
-
-   ```bash
-   cd server && npm run db:check
-   ```
-
-   That prints the server version, database name and collections on success, and names the
-   specific fix on failure.
-
-## Local development
-
-Two terminals.
-
-```bash
-# API — http://localhost:5000
-cd server
-cp .env.example .env      # fill in MONGODB_URI
-npm install
-npm run dev
-
-# Client — http://localhost:5173
-cd client
-cp .env.example .env.local   # leave VITE_API_URL empty; Vite proxies /api
-npm install
-npm run dev
-```
-
-The home page shows an API health card. If it reads `disconnected`, the server is up but
-Atlas is not wired — that is a valid state and the server will still boot.
-
-## Deployment
-
-| | Vercel (client) | Render (server) |
-|---|---|---|
-| Root directory | `client` | `server` |
-| Build | `npm run build` | `npm install` |
-| Start | — | `npm start` |
-| Env | `VITE_API_URL` = Render URL, no trailing slash | `MONGODB_URI`, `CORS_ORIGINS`, `NODE_ENV=production` |
-
-Atlas Network Access must allow `0.0.0.0/0` — Render's free tier has no static IP. Render
-free instances sleep after 15 minutes idle; the first request after that takes roughly 50
-seconds. Add the Vercel domain to `CORS_ORIGINS` once it exists.
-
-## Roadmap
-
-- [x] **Phase 1 — Planning & setup.** Data model, sourcing workflow, PRD, repo skeleton, CI/CD path
-- [ ] **Phase 2 — Backend core.** Mongoose schemas, CRUD routes, search, JWT auth, Cloudinary, seed the Kargil set
-- [ ] **Phase 3 — Frontend core.** Home, profiles, memorials, search, admin dashboard; responsive throughout
-- [ ] **Phase 4 — Content & polish.** Verified records, gallery, performance pass, hardening, cross-device testing
-
-Content work runs in parallel from Phase 2 onward, not at the end. Sourcing is the long pole.
