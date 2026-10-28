@@ -1,25 +1,45 @@
 # Veergatha
 
+**Live site:** https://veergatha.vercel.app
+
 A digital archive of India's gallantry award recipients, the conflicts they served in, and the
-war memorials that carry their names. *Veergatha*: Sanskrit for tales of bravery.
+war memorials that carry their names. Every published fact names its source, and records go
+through editorial review before they are public.
 
-Every published fact carries its source. Drafts are never public. A record cannot be verified
-without a primary source, a recipient who survived is never given a date of death, and media
-cannot be published until its licence is cleared. These rules are enforced in the database
-(see `drizzle/migrations/0000_archive_schema.sql`), not only in the UI.
+## Features
 
-## Stack
+**Public site**
 
-| Layer | Choice |
-|---|---|
-| Framework | TanStack Start (React 19, file-based routing, SSR, server functions) |
-| Data and auth | Supabase (Postgres with row-level security, Supabase Auth) |
-| Schema | SQL migrations in `drizzle/migrations/` |
-| Styling | Tailwind CSS v4 with shadcn/ui components |
-| Build | Vite 8 with Nitro |
-| Package manager | pnpm |
+- Roll of Honour with filters for award, conflict, service, home state, status and decade
+- A page for each recipient: biography, awards, citations, memorials and sources
+- Conflicts on a timeline, each with its key events and recipients
+- War memorials on a map, each with the names it honours
+- Photo gallery with the licence and credit for every image
+- Search across recipients, conflicts and memorials
+- Corrections form for readers to report an error
 
-## Getting started
+**Editorial Desk** (`/admin`, sign-in required)
+
+- Edit recipients, conflicts and memorials, moving each through draft, in review and verified
+- Upload photos with their licence and credit
+- Review reader corrections
+- Sign up, sign in and reset a forgotten password by email
+
+## Rules enforced by the database
+
+1. A record cannot be verified without a primary source.
+2. A recipient who survived cannot have a date of death or a posthumous award.
+3. A photo cannot be published until its licence is cleared.
+4. Visitors see only verified records; only editors can write.
+
+## Tech stack
+
+TanStack Start (React 19), Supabase (Postgres, row-level security, Auth, Storage), Tailwind CSS,
+Leaflet, Vite, Vitest, pnpm. Hosted on Vercel.
+
+## Run locally
+
+Requires Node.js 22+ and pnpm.
 
 ```sh
 pnpm install
@@ -27,45 +47,37 @@ cp .env.example .env    # fill in your Supabase values
 pnpm dev                # http://localhost:3000
 ```
 
-| Command | What it does |
-|---|---|
-| `pnpm dev` | Start the dev server |
-| `pnpm build` | Production build into `.output/` |
-| `pnpm preview` | Serve the production build |
-| `pnpm test` | Run the tests (Vitest) |
-| `pnpm lint` | Lint with ESLint |
+| Command      | Purpose            |
+| ------------ | ------------------ |
+| `pnpm dev`   | Development server |
+| `pnpm build` | Production build   |
+| `pnpm test`  | Run tests          |
+| `pnpm lint`  | Lint               |
 
-## Environment
+## Environment variables
 
-| Variable | Used by | Secret? |
-|---|---|---|
-| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` | Browser | No |
-| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Server rendering | No |
-| `DATABASE_URL` | Applying migrations with drizzle-kit | **Yes** |
+| Variable                                                                         | Secret? |
+| -------------------------------------------------------------------------------- | ------- |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` | No      |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PROJECT_ID`                | No      |
+| `DATABASE_URL` (only for applying migrations)                                    | Yes     |
 
-`.env` is git-ignored. Never commit the database URL. The site needs no service-role key: every
-read and write goes through row-level security.
+## Database setup
 
-## Database
+1. Create a Supabase project.
+2. Run the SQL files in `drizzle/migrations/` in order. They create the schema, rules and data.
+3. Sign up at `/auth`. The first account becomes the administrator.
+4. To add an editor, insert a row in the `user_roles` table with their user ID and role `editor`.
 
-The schema, editorial rules, access policies and seed data live in `drizzle/migrations/`, in
-order. To set up a fresh Supabase project, run them in sequence in the Supabase SQL editor, or
-with `DATABASE_URL` set.
-
-The first account to sign up becomes the archive's administrator. Create your own account
-immediately after setting up a new database.
-
-## Project layout
+## Project structure
 
 ```
 src/
-  routes/          one file per page (TanStack file-based routing)
-    _authenticated/  pages that require sign-in (the editorial desk)
-  components/
-    archive/       site chrome, recipient cards, memorial map, shared page pieces
-    admin/         editorial desk forms and helpers
-    ui/            the shadcn/ui primitives the site uses
-  integrations/supabase/   Supabase client and generated database types
-  lib/             data access (archive.functions.ts), formatting helpers
-drizzle/migrations/        database schema, seed data and data fixes
+  routes/                  pages (file-based routing)
+    _authenticated/        Editorial Desk pages
+  components/              site, Desk and UI components
+  integrations/supabase/   Supabase client and types
+  lib/                     data access and helpers
+  test/                    tests
+drizzle/migrations/        database schema, rules and data
 ```
